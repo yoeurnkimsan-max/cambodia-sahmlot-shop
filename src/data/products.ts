@@ -185,3 +185,29 @@ export const categoryMeta: Record<Category, { label: string; description: string
   essentials: { label: "Essentials", description: "Wardrobe foundations, refined." },
   new: { label: "New Arrivals", description: "The latest drops, just in." },
 };
+
+/**
+ * Local product store — merges the static catalog with anything added through
+ * the Admin page (persisted to localStorage). Static-only, no backend.
+ */
+const ADMIN_STORAGE_KEY = "sahmlot.admin.products.v1";
+
+export const loadAdminProducts = (): Product[] => {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(ADMIN_STORAGE_KEY);
+    return raw ? (JSON.parse(raw) as Product[]) : [];
+  } catch {
+    return [];
+  }
+};
+
+export const saveAdminProducts = (list: Product[]) => {
+  try {
+    localStorage.setItem(ADMIN_STORAGE_KEY, JSON.stringify(list));
+  } catch {
+    /* ignore quota errors */
+  }
+};
+
+export const getAllProducts = (): Product[] => [...loadAdminProducts(), ...products];

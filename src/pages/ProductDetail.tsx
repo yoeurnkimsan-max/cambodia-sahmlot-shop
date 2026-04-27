@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { products } from "@/data/products";
+import { useProducts } from "@/hooks/useProducts";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/context/CartContext";
 import { ChevronDown, Minus, Plus, Truck, RotateCcw, Shield } from "lucide-react";
@@ -10,7 +10,8 @@ import NotFound from "./NotFound";
 
 const ProductDetail = () => {
   const { slug } = useParams();
-  const product = useMemo(() => products.find((p) => p.slug === slug), [slug]);
+  const products = useProducts();
+  const product = useMemo(() => products.find((p) => p.slug === slug), [slug, products]);
   const { addItem } = useCart();
   const [color, setColor] = useState(product?.colors[0]?.name ?? "");
   const [size, setSize] = useState<string>("");
@@ -52,7 +53,7 @@ const ProductDetail = () => {
           </div>
 
           {/* Info */}
-          <div className="lg:sticky lg:top-28 lg:self-start">
+          <div className="relative z-base lg:sticky lg:top-28 lg:self-start">
             <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">{product.collection}</p>
             <h1 className="mt-2 font-serif text-3xl sm:text-4xl">{product.name}</h1>
             <div className="mt-3 flex items-baseline gap-3">

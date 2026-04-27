@@ -4,14 +4,14 @@ import heroImg from "@/assets/hero.jpg";
 import categoryWomen from "@/assets/category-women.jpg";
 import categoryMen from "@/assets/category-men.jpg";
 import categoryEssentials from "@/assets/category-essentials.jpg";
-import { products } from "@/data/products";
+import { useProducts } from "@/hooks/useProducts";
 import ProductCard from "@/components/ProductCard";
 import { Button } from "@/components/ui/button";
 
-const featured = products.slice(0, 4);
-const newIn = products.filter((p) => p.categories.includes("new")).slice(0, 8);
-
 const Home = () => {
+  const products = useProducts();
+  const featured = products.slice(0, 4);
+  const newIn = products.filter((p) => p.categories.includes("new")).slice(0, 8);
   return (
     <>
       {/* HERO */}

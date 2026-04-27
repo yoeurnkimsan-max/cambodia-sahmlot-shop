@@ -1,5 +1,5 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Menu, Search, ShoppingBag, User, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/context/CartContext";
@@ -21,6 +21,12 @@ const Header = () => {
   const [query, setQuery] = useState("");
   const navigate = useNavigate();
 
+  useEffect(() => {
+    if (mobileOpen) document.body.style.overflow = "hidden";
+    else document.body.style.overflow = "";
+    return () => { document.body.style.overflow = ""; };
+  }, [mobileOpen]);
+
   const submitSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (query.trim()) {
@@ -31,7 +37,7 @@ const Header = () => {
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-border bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70">
+    <header className="sticky top-0 z-header w-full border-b border-border bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/75">
       <div className="container-page flex h-16 items-center justify-between gap-4 lg:h-20">
         <button
           aria-label="Open menu"
@@ -103,14 +109,14 @@ const Header = () => {
       {/* Mobile drawer */}
       <div
         className={cn(
-          "fixed inset-0 z-50 lg:hidden transition-opacity",
+          "fixed inset-0 z-drawer lg:hidden transition-opacity duration-300",
           mobileOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none",
         )}
       >
-        <div className="absolute inset-0 bg-foreground/40" onClick={() => setMobileOpen(false)} />
+        <div className="absolute inset-0 z-overlay bg-foreground/50" onClick={() => setMobileOpen(false)} />
         <aside
           className={cn(
-            "absolute left-0 top-0 h-full w-[82%] max-w-sm bg-background shadow-card transition-transform",
+            "absolute left-0 top-0 z-drawer h-full w-[82%] max-w-sm bg-background shadow-card transition-transform duration-300",
             mobileOpen ? "translate-x-0" : "-translate-x-full",
           )}
         >

@@ -7,7 +7,7 @@ const messages = [
 
 const AnnouncementBar = () => {
   return (
-    <div className="bg-primary text-primary-foreground overflow-hidden">
+    <div className="relative z-announcement bg-primary text-primary-foreground overflow-hidden">
       <div className="flex whitespace-nowrap py-2 text-xs sm:text-sm marquee">
         {[...messages, ...messages].map((m, i) => (
           <span key={i} className="mx-8 inline-flex items-center gap-2 tracking-wide uppercase">

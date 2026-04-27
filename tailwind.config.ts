@@ -75,6 +75,15 @@ export default {
         soft: 'var(--shadow-soft)',
         card: 'var(--shadow-card)',
       },
+      zIndex: {
+        base: 'var(--z-base)',
+        sticky: 'var(--z-sticky)',
+        announcement: 'var(--z-announcement)',
+        header: 'var(--z-header)',
+        overlay: 'var(--z-overlay)',
+        drawer: 'var(--z-drawer)',
+        toast: 'var(--z-toast)',
+      },
       keyframes: {
         "accordion-down": {
           from: {
