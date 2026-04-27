@@ -121,7 +121,7 @@ const Admin = () => {
       sizes: data.sizes,
       colors,
       image: data.image,
-      badge: data.badge && data.badge !== "" ? (data.badge as Product["badge"]) : undefined,
+      badge: data.badge ? (data.badge as Product["badge"]) : undefined,
     };
 
     const next = [product, ...items];
