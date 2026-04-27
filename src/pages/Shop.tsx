@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { products, Category, categoryMeta } from "@/data/products";
+import { Category, categoryMeta } from "@/data/products";
+import { useProducts } from "@/hooks/useProducts";
 import ProductCard from "@/components/ProductCard";
 import { ChevronDown, SlidersHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -21,6 +22,7 @@ const allCats: { value: Category | "all"; label: string }[] = [
 ];
 
 const Shop = () => {
+  const products = useProducts();
   const [params, setParams] = useSearchParams();
   const cat = (params.get("cat") as Category | null) || "all";
   const q = params.get("q")?.toLowerCase() || "";
@@ -37,7 +39,7 @@ const Shop = () => {
       case "name": list.sort((a, b) => a.name.localeCompare(b.name)); break;
     }
     return list;
-  }, [cat, q, sort]);
+  }, [cat, q, sort, products]);
 
   const setCat = (value: string) => {
     const next = new URLSearchParams(params);

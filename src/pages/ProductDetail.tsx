@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { products } from "@/data/products";
+import { useProducts } from "@/hooks/useProducts";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/context/CartContext";
 import { ChevronDown, Minus, Plus, Truck, RotateCcw, Shield } from "lucide-react";
@@ -10,6 +10,7 @@ import NotFound from "./NotFound";
 
 const ProductDetail = () => {
   const { slug } = useParams();
+  const products = useProducts();
   const product = useMemo(() => products.find((p) => p.slug === slug), [slug]);
   const { addItem } = useCart();
   const [color, setColor] = useState(product?.colors[0]?.name ?? "");
