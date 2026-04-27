@@ -8,35 +8,49 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Sahmlot — warm cream + ink design system */
+    --background: 40 33% 97%;
+    --foreground: 24 14% 12%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: 40 40% 99%;
+    --card-foreground: 24 14% 12%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover: 40 40% 99%;
+    --popover-foreground: 24 14% 12%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 24 14% 12%;
+    --primary-foreground: 40 33% 97%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 36 25% 92%;
+    --secondary-foreground: 24 14% 12%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 36 20% 93%;
+    --muted-foreground: 25 8% 42%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 18 65% 52%;
+    --accent-foreground: 40 33% 97%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 72% 45%;
+    --destructive-foreground: 40 33% 97%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 30 15% 86%;
+    --input: 30 15% 86%;
+    --ring: 24 14% 12%;
 
-    --radius: 0.5rem;
+    --radius: 0.25rem;
+
+    /* Brand tokens */
+    --brand-cream: 40 45% 95%;
+    --brand-sand: 34 30% 88%;
+    --brand-ink: 24 14% 12%;
+    --brand-clay: 18 65% 52%;
+    --brand-olive: 80 18% 38%;
+
+    --gradient-warm: linear-gradient(180deg, hsl(40 45% 96%), hsl(34 30% 90%));
+    --gradient-hero: linear-gradient(135deg, hsl(40 45% 95% / 0.0), hsl(40 45% 95% / 0.95));
+    --shadow-soft: 0 1px 2px hsl(24 14% 12% / 0.04), 0 8px 24px -8px hsl(24 14% 12% / 0.08);
+    --shadow-card: 0 2px 6px hsl(24 14% 12% / 0.05), 0 12px 32px -12px hsl(24 14% 12% / 0.12);
+    --transition-base: 300ms cubic-bezier(0.4, 0, 0.2, 1);
 
     --sidebar-background: 0 0% 98%;
 
@@ -56,33 +70,25 @@ All colors MUST be HSL.
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --background: 24 14% 8%;
+    --foreground: 40 33% 95%;
+    --card: 24 14% 10%;
+    --card-foreground: 40 33% 95%;
+    --popover: 24 14% 10%;
+    --popover-foreground: 40 33% 95%;
+    --primary: 40 33% 95%;
+    --primary-foreground: 24 14% 12%;
+    --secondary: 24 10% 16%;
+    --secondary-foreground: 40 33% 95%;
+    --muted: 24 10% 16%;
+    --muted-foreground: 30 10% 65%;
+    --accent: 18 65% 55%;
+    --accent-foreground: 40 33% 95%;
+    --destructive: 0 62% 45%;
+    --destructive-foreground: 40 33% 95%;
+    --border: 24 10% 20%;
+    --input: 24 10% 20%;
+    --ring: 40 33% 95%;
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
@@ -100,6 +106,30 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans antialiased;
+    font-feature-settings: "ss01", "cv11";
   }
+
+  h1, h2, h3, h4, h5 {
+    @apply font-serif tracking-tight;
+  }
+}
+
+@layer utilities {
+  .container-page {
+    @apply mx-auto w-full max-w-[1400px] px-4 sm:px-6 lg:px-10;
+  }
+  .text-balance { text-wrap: balance; }
+  .hover-lift { transition: transform var(--transition-base), box-shadow var(--transition-base); }
+  .hover-lift:hover { transform: translateY(-4px); box-shadow: var(--shadow-card); }
+  .marquee { animation: marquee 30s linear infinite; }
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .animate-fade-up { animation: fade-up 0.6s cubic-bezier(0.4, 0, 0.2, 1) both; }
 }
