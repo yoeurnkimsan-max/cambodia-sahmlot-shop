@@ -81,7 +81,7 @@ const Checkout = () => {
           <Button type="submit" size="lg" className="w-full rounded-none">Place Order — ${total.toFixed(2)}</Button>
         </form>
 
-        <aside className="lg:sticky lg:top-28 lg:self-start border border-border p-6 bg-secondary/40 h-fit">
+        <aside className="relative z-base lg:sticky lg:top-28 lg:self-start border border-border p-6 bg-secondary/40 h-fit">
           <h2 className="font-serif text-xl">Order Summary</h2>
           <ul className="mt-5 space-y-4 max-h-[360px] overflow-y-auto pr-1">
             {itemsDetailed.map((i) => (

@@ -10,15 +10,15 @@ const CartDrawer = () => {
   return (
     <div
       className={cn(
-        "fixed inset-0 z-50 transition-opacity",
+        "fixed inset-0 z-drawer transition-opacity duration-300",
         isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none",
       )}
       aria-hidden={!isOpen}
     >
-      <div className="absolute inset-0 bg-foreground/40" onClick={closeCart} />
+      <div className="absolute inset-0 z-overlay bg-foreground/50" onClick={closeCart} />
       <aside
         className={cn(
-          "absolute right-0 top-0 flex h-full w-full max-w-md flex-col bg-background shadow-card transition-transform",
+          "absolute right-0 top-0 z-drawer flex h-full w-full max-w-md flex-col bg-background shadow-card transition-transform duration-300",
           isOpen ? "translate-x-0" : "translate-x-full",
         )}
       >

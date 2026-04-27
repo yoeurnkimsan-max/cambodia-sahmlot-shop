@@ -52,7 +52,7 @@ const ProductDetail = () => {
           </div>
 
           {/* Info */}
-          <div className="lg:sticky lg:top-28 lg:self-start">
+          <div className="relative z-base lg:sticky lg:top-28 lg:self-start">
             <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">{product.collection}</p>
             <h1 className="mt-2 font-serif text-3xl sm:text-4xl">{product.name}</h1>
             <div className="mt-3 flex items-baseline gap-3">
