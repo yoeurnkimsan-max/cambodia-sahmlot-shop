@@ -11,7 +11,7 @@ import NotFound from "./NotFound";
 const ProductDetail = () => {
   const { slug } = useParams();
   const products = useProducts();
-  const product = useMemo(() => products.find((p) => p.slug === slug), [slug]);
+  const product = useMemo(() => products.find((p) => p.slug === slug), [slug, products]);
   const { addItem } = useCart();
   const [color, setColor] = useState(product?.colors[0]?.name ?? "");
   const [size, setSize] = useState<string>("");
