@@ -181,8 +181,11 @@ const Header = () => {
             if (m.id !== activeMenu) return null;
             return (
               <div key={m.id} className="container-page py-10">
-                <div className={cn("grid gap-10", m.feature ? "grid-cols-[1fr_320px]" : "grid-cols-1")}>
-                  <div className={cn("grid gap-10", `grid-cols-${Math.min(m.columns.length, 4)}`)}>
+                <div className={cn("grid gap-10", m.feature ? "lg:grid-cols-[1fr_320px]" : "grid-cols-1")}>
+                  <div
+                    className="grid gap-10"
+                    style={{ gridTemplateColumns: `repeat(${Math.min(m.columns.length, 4)}, minmax(0, 1fr))` }}
+                  >
                     {m.columns.map((col) => (
                       <div key={col.heading}>
                         <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-muted-foreground mb-4 pb-2 border-b border-border">
