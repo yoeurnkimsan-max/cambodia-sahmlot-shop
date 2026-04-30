@@ -1,16 +1,19 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, Leaf, Package, RotateCcw, Shield } from "lucide-react";
-import heroImg from "@/assets/hero.jpg";
 import categoryWomen from "@/assets/category-women.jpg";
 import categoryMen from "@/assets/category-men.jpg";
 import categoryEssentials from "@/assets/category-essentials.jpg";
 import { useProducts } from "@/hooks/useProducts";
 import ProductCard from "@/components/ProductCard";
+import HeroSection from "@/components/HeroSection";
+import QuickViewModal from "@/components/QuickViewModal";
 import { Button } from "@/components/ui/button";
-import HeroSection from "./Hero-Section";
+import { Product } from "@/data/products";
 
 const Home = () => {
   const products = useProducts();
+  const [quickView, setQuickView] = useState<Product | null>(null);
   const featured = products.slice(0, 4);
   const newIn = products.filter((p) => p.categories.includes("new")).slice(0, 8);
   return (
@@ -67,7 +70,7 @@ const Home = () => {
         </div>
         <div className="grid gap-x-4 gap-y-10 grid-cols-2 lg:grid-cols-4">
           {featured.map((p) => (
-            <ProductCard key={p.id} product={p} />
+            <ProductCard key={p.id} product={p} onQuickView={setQuickView} />
           ))}
         </div>
       </section>
@@ -114,7 +117,7 @@ const Home = () => {
         </div>
         <div className="grid gap-x-4 gap-y-10 grid-cols-2 lg:grid-cols-4">
           {newIn.slice(0, 4).map((p) => (
-            <ProductCard key={p.id} product={p} />
+            <ProductCard key={p.id} product={p} onQuickView={setQuickView} />
           ))}
         </div>
       </section>
@@ -134,6 +137,7 @@ const Home = () => {
           </div>
         </div>
       </section>
+      <QuickViewModal product={quickView} onClose={() => setQuickView(null)} />
     </>
   );
 };
