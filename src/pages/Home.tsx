@@ -7,6 +7,7 @@ import categoryEssentials from "@/assets/category-essentials.jpg";
 import { useProducts } from "@/hooks/useProducts";
 import ProductCard from "@/components/ProductCard";
 import { Button } from "@/components/ui/button";
+import HeroSection from "./Hero-Section";
 
 const Home = () => {
   const products = useProducts();
@@ -15,41 +16,7 @@ const Home = () => {
   return (
     <>
       {/* HERO */}
-      <section className="relative overflow-hidden bg-secondary/40">
-        <div className="grid lg:grid-cols-2 min-h-[78vh] lg:min-h-[640px]">
-          <div className="relative">
-            <img
-              src={heroImg}
-              alt="Models wearing premium Sahmlot tees"
-              width={1920}
-              height={1280}
-              className="absolute inset-0 h-full w-full object-cover"
-            />
-          </div>
-          <div className="flex flex-col justify-center gap-6 px-6 py-16 sm:px-10 lg:px-16">
-            <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground animate-fade-up">Resort '25 Collection</p>
-            <h1 className="font-serif text-4xl sm:text-5xl lg:text-6xl leading-[1.05] tracking-tight text-balance animate-fade-up">
-              Quiet luxury, made in <em className="text-accent not-italic">Cambodia</em>.
-            </h1>
-            <p className="max-w-md text-base text-muted-foreground animate-fade-up">
-              Premium shirts, polos and tees crafted from natural fibers — designed for the way you live, here and everywhere.
-            </p>
-            <div className="flex flex-wrap gap-3 animate-fade-up">
-              <Button asChild size="lg" className="rounded-none">
-                <Link to="/shop?cat=new">Shop New Arrivals <ArrowRight className="ml-1 h-4 w-4" /></Link>
-              </Button>
-              <Button asChild variant="outline" size="lg" className="rounded-none">
-                <Link to="/shop">Browse All</Link>
-              </Button>
-            </div>
-            <div className="mt-6 flex flex-wrap items-center gap-x-8 gap-y-3 text-xs uppercase tracking-widest text-muted-foreground animate-fade-up">
-              <span className="inline-flex items-center gap-2"><Leaf className="h-4 w-4" /> Natural fibers</span>
-              <span className="inline-flex items-center gap-2"><Package className="h-4 w-4" /> Free shipping $35+</span>
-              <span className="inline-flex items-center gap-2"><RotateCcw className="h-4 w-4" /> 14-day returns</span>
-            </div>
-          </div>
-        </div>
-      </section>
+      <HeroSection />
 
       {/* CATEGORIES */}
       <section className="container-page py-16 lg:py-24">
