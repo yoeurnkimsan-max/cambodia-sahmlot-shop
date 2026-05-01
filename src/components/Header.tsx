@@ -345,32 +345,44 @@ const Header = () => {
             <X className="h-4 w-4" />
           </button>
         </div>
-        <nav className="flex-1 overflow-y-auto px-5 py-4">
+        <nav className="flex-1 overflow-y-auto px-5 py-2">
           {megaMenus.map((m) => {
             const open = mobileExpanded === m.id;
             return (
-              <div key={m.id} className="border-b border-border">
+              <div key={m.id} className="border-b border-border last:border-b-0">
                 <button
                   type="button"
                   onClick={() => setMobileExpanded(open ? null : m.id)}
                   className={cn(
-                    "flex items-center justify-between w-full py-4 text-sm font-medium uppercase tracking-[0.15em]",
-                    m.accent ? "text-accent" : "text-foreground",
+                    "flex items-center justify-between w-full py-4 text-sm font-medium uppercase tracking-[0.18em] transition-colors",
+                    m.accent ? "text-accent" : open ? "text-foreground" : "text-foreground/80 hover:text-foreground",
                   )}
                   aria-expanded={open}
                 >
-                  {m.label}
-                  <ChevronDown className={cn("h-4 w-4 transition-transform", open && "rotate-180")} />
+                  <span className="flex items-center gap-3">
+                    <span
+                      className={cn(
+                        "h-1 w-1 rounded-full bg-current transition-all duration-300",
+                        open ? "opacity-100 scale-100" : "opacity-0 scale-50",
+                      )}
+                    />
+                    {m.label}
+                  </span>
+                  <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform duration-300", open && "rotate-180 text-foreground")} />
                 </button>
                 {open && (
-                  <div className="pb-4 pl-2 space-y-3 animate-fade-up">
+                  <div className="pb-5 pl-4 space-y-4 animate-accordion-down">
                     {m.columns.map((col) => (
                       <div key={col.heading}>
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground mb-2">{col.heading}</p>
-                        <ul className="space-y-2">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-muted-foreground mb-2">{col.heading}</p>
+                        <ul className="space-y-1 border-l border-border/60 pl-3">
                           {col.links.map((l) => (
                             <li key={l.label}>
-                              <Link to={l.to} onClick={() => setMobileOpen(false)} className="block py-1 text-sm text-foreground/75 hover:text-foreground">
+                              <Link
+                                to={l.to}
+                                onClick={() => setMobileOpen(false)}
+                                className="block py-1.5 text-sm text-foreground/75 hover:text-foreground hover:translate-x-1 transition-all duration-200"
+                              >
                                 {l.label}
                               </Link>
                             </li>
