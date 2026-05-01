@@ -6,10 +6,8 @@ const Footer = () => {
     <footer className="mt-24 border-t border-border bg-secondary/40">
       <div className="container-page grid gap-12 py-16 md:grid-cols-2 lg:grid-cols-4">
         <div>
-          <Link to="/" className="font-serif text-2xl font-semibold tracking-tight inline-flex items-center">
-            Sahml
-            <span className="mx-[1px] inline-block h-1.5 w-1.5 rounded-full bg-accent" />
-            t
+          <Link to="/" className="font-serif text-2xl font-semibold tracking-tight inline-flex items-center gap-2">
+            <span className="inline-block h-2 w-2 rounded-full bg-accent" /> Sahmlot
           </Link>
           <p className="mt-4 text-sm text-muted-foreground max-w-xs">
             Modern Cambodian fashion. Premium shirts and essentials, designed in Phnom Penh and made to last.

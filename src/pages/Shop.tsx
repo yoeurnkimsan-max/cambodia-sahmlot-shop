@@ -1,11 +1,9 @@
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Category, categoryMeta, collections, Product } from "@/data/products";
+import { Category, categoryMeta } from "@/data/products";
 import { useProducts } from "@/hooks/useProducts";
 import ProductCard from "@/components/ProductCard";
-import QuickViewModal from "@/components/QuickViewModal";
-import { Button } from "@/components/ui/button";
-import { ChevronDown, SlidersHorizontal, X } from "lucide-react";
+import { ChevronDown, SlidersHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const sortOptions = [
@@ -26,55 +24,32 @@ const allCats: { value: Category | "all"; label: string }[] = [
 const Shop = () => {
   const products = useProducts();
   const [params, setParams] = useSearchParams();
+  const cat = (params.get("cat") as Category | null) || "all";
+  const q = params.get("q")?.toLowerCase() || "";
   const [sort, setSort] = useState("featured");
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [quickView, setQuickView] = useState<Product | null>(null);
-
-  const cat = (params.get("cat") as Category | null) || "all";
-  const q = params.get("q")?.toLowerCase().trim() || "";
-  const collection = params.get("collection")?.toLowerCase() || "";
 
   const filtered = useMemo(() => {
     let list = products.slice();
     if (cat !== "all") list = list.filter((p) => p.categories.includes(cat as Category));
-    if (collection) {
-      const target = collections.find((c) => c.slug === collection);
-      if (target) list = list.filter((p) => p.collection === target.name);
-    }
-    if (q) {
-      const tokens = q.split(/\s+/).filter(Boolean);
-      list = list.filter((p) => {
-        const hay = `${p.name} ${p.collection} ${p.description} ${p.badge ?? ""}`.toLowerCase();
-        return tokens.every((t) => hay.includes(t));
-      });
-    }
+    if (q) list = list.filter((p) => `${p.name} ${p.collection}`.toLowerCase().includes(q));
     switch (sort) {
       case "price-asc": list.sort((a, b) => a.price - b.price); break;
       case "price-desc": list.sort((a, b) => b.price - a.price); break;
       case "name": list.sort((a, b) => a.name.localeCompare(b.name)); break;
     }
     return list;
-  }, [cat, q, collection, sort, products]);
+  }, [cat, q, sort, products]);
 
   const setCat = (value: string) => {
     const next = new URLSearchParams(params);
-    if (value === "all") next.delete("cat"); else next.set("cat", value);
+    if (value === "all") next.delete("cat");
+    else next.set("cat", value);
     setParams(next, { replace: true });
   };
 
-  const clearFilter = (key: string) => {
-    const next = new URLSearchParams(params);
-    next.delete(key);
-    setParams(next, { replace: true });
-  };
-
-  const collectionLabel = collection ? collections.find((c) => c.slug === collection)?.name : null;
-  const heading = cat !== "all" ? categoryMeta[cat as Category]?.label : collectionLabel || "All Products";
-  const subheading = cat !== "all"
-    ? categoryMeta[cat as Category]?.description
-    : collectionLabel
-      ? collections.find((c) => c.slug === collection)?.tagline
-      : "Every Sahmlot piece, in one place.";
+  const heading = cat !== "all" ? categoryMeta[cat as Category]?.label : "All Products";
+  const subheading = cat !== "all" ? categoryMeta[cat as Category]?.description : "Every Sahmlot piece, in one place.";
 
   return (
     <>
@@ -83,26 +58,12 @@ const Shop = () => {
           <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Shop</p>
           <h1 className="mt-2 font-serif text-4xl sm:text-5xl">{heading}</h1>
           <p className="mt-2 text-muted-foreground max-w-xl">{subheading}</p>
-
-          {/* Active filters */}
-          {(q || collection) && (
-            <div className="mt-4 flex flex-wrap items-center gap-2 text-xs">
-              {q && (
-                <button onClick={() => clearFilter("q")} className="inline-flex items-center gap-1.5 border border-border bg-background px-3 py-1 hover:border-foreground">
-                  Search: <span className="font-semibold">{q}</span> <X className="h-3 w-3" />
-                </button>
-              )}
-              {collectionLabel && (
-                <button onClick={() => clearFilter("collection")} className="inline-flex items-center gap-1.5 border border-border bg-background px-3 py-1 hover:border-foreground">
-                  Collection: <span className="font-semibold">{collectionLabel}</span> <X className="h-3 w-3" />
-                </button>
-              )}
-            </div>
-          )}
+          {q && <p className="mt-3 text-sm">Showing results for <span className="font-semibold">"{q}"</span></p>}
         </div>
       </section>
 
       <section className="container-page py-8">
+        {/* Toolbar */}
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
           <div className="hidden md:flex items-center gap-1 overflow-x-auto">
             {allCats.map((c) => (
@@ -135,7 +96,9 @@ const Shop = () => {
                 onChange={(e) => setSort(e.target.value)}
                 className="appearance-none border border-border bg-background py-2 pl-3 pr-8 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-ring"
               >
-                {sortOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                {sortOptions.map((o) => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
               </select>
               <ChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4" />
             </div>
@@ -161,20 +124,17 @@ const Shop = () => {
 
         {filtered.length === 0 ? (
           <div className="py-24 text-center">
-            <h2 className="font-serif text-2xl">Nothing matches yet</h2>
-            <p className="mt-2 text-muted-foreground">Try a different filter or clear your search.</p>
-            <Button onClick={() => setParams({}, { replace: true })} className="mt-6 rounded-none">Reset filters</Button>
+            <h2 className="font-serif text-2xl">Nothing here yet</h2>
+            <p className="mt-2 text-muted-foreground">Try a different filter or check back soon.</p>
           </div>
         ) : (
           <div className="mt-8 grid gap-x-4 gap-y-10 grid-cols-2 lg:grid-cols-4">
             {filtered.map((p) => (
-              <ProductCard key={p.id} product={p} onQuickView={setQuickView} />
+              <ProductCard key={p.id} product={p} />
             ))}
           </div>
         )}
       </section>
-
-      <QuickViewModal product={quickView} onClose={() => setQuickView(null)} />
     </>
   );
 };

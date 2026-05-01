@@ -10,19 +10,15 @@ import ProductDetail from "./pages/ProductDetail";
 import Checkout from "./pages/Checkout";
 import About from "./pages/About";
 import Admin from "./pages/Admin";
-import Wishlist from "./pages/Wishlist";
 import NotFound from "./pages/NotFound.tsx";
 import { CartProvider } from "@/context/CartContext";
-import { WishlistProvider } from "@/context/WishlistContext";
-import { CompareProvider } from "@/context/CompareContext";
-import { RecentlyViewedProvider } from "@/context/RecentlyViewedContext";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <WishlistProvider><CompareProvider><RecentlyViewedProvider><CartProvider>
+      <CartProvider>
         <Toaster />
         <Sonner />
         <BrowserRouter>
@@ -34,12 +30,11 @@ const App = () => (
               <Route path="/checkout" element={<Checkout />} />
               <Route path="/about" element={<About />} />
               <Route path="/admin" element={<Admin />} />
-              <Route path="/wishlist" element={<Wishlist />} />
               <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>
         </BrowserRouter>
-      </CartProvider></RecentlyViewedProvider></CompareProvider></WishlistProvider>
+      </CartProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

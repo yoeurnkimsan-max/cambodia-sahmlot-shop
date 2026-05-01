@@ -1,12 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useProducts } from "@/hooks/useProducts";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/context/CartContext";
-import { useRecentlyViewed } from "@/context/RecentlyViewedContext";
 import { ChevronDown, Minus, Plus, Truck, RotateCcw, Shield } from "lucide-react";
 import ProductCard from "@/components/ProductCard";
-import RecentlyViewed from "@/components/RecentlyViewed";
 import { cn } from "@/lib/utils";
 import NotFound from "./NotFound";
 
@@ -15,13 +13,10 @@ const ProductDetail = () => {
   const products = useProducts();
   const product = useMemo(() => products.find((p) => p.slug === slug), [slug, products]);
   const { addItem } = useCart();
-  const { push } = useRecentlyViewed();
   const [color, setColor] = useState(product?.colors[0]?.name ?? "");
   const [size, setSize] = useState<string>("");
   const [qty, setQty] = useState(1);
   const [openSection, setOpenSection] = useState<string | null>("details");
-
-  useEffect(() => { if (product) push(product.id); }, [product, push]);
 
   if (!product) return <NotFound />;
 
@@ -186,8 +181,6 @@ const ProductDetail = () => {
           {related.map((p) => <ProductCard key={p.id} product={p} />)}
         </div>
       </section>
-
-      <RecentlyViewed excludeId={product.id} />
     </>
   );
 };
