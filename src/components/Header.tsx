@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
-import { Heart, Menu, Search, ShoppingBag, User, X, ChevronDown } from "lucide-react";
+import { Heart, Menu, Search, ShoppingBag, User, X, ChevronDown, ArrowUpRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/context/CartContext";
 import { useWishlist } from "@/context/WishlistContext";
@@ -20,6 +20,38 @@ const Header = () => {
   const [mobileExpanded, setMobileExpanded] = useState<string | null>(null);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const navRef = useRef<HTMLElement>(null);
+  const itemRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const [indicator, setIndicator] = useState<{ left: number; width: number; visible: boolean }>({ left: 0, width: 0, visible: false });
+
+  // Determine which top menu the current route belongs to (for "active" highlight when no hover)
+  const routeActiveId = (() => {
+    const params = new URLSearchParams(location.search);
+    const cat = params.get("cat");
+    const collection = params.get("collection");
+    const q = params.get("q");
+    if (location.pathname !== "/shop") return null;
+    if (cat === "new") return "new";
+    if (cat === "men") return "men";
+    if (cat === "women") return "women";
+    if (q === "sale") return "sale";
+    if (collection) return "collections";
+    return "clothing";
+  })();
+
+  // Move the sliding indicator under hovered or route-active item
+  useEffect(() => {
+    const targetId = activeMenu ?? routeActiveId;
+    if (!targetId || !navRef.current) {
+      setIndicator((s) => ({ ...s, visible: false }));
+      return;
+    }
+    const el = itemRefs.current[targetId];
+    if (!el) return;
+    const navRect = navRef.current.getBoundingClientRect();
+    const rect = el.getBoundingClientRect();
+    setIndicator({ left: rect.left - navRect.left + 12, width: rect.width - 24, visible: true });
+  }, [activeMenu, routeActiveId, location.pathname, location.search]);
 
   // Close all panels on route change
   useEffect(() => {
@@ -58,7 +90,7 @@ const Header = () => {
   };
   const leaveMenu = () => {
     if (closeTimer.current) clearTimeout(closeTimer.current);
-    closeTimer.current = setTimeout(() => setActiveMenu(null), 120);
+    closeTimer.current = setTimeout(() => setActiveMenu(null), 150);
   };
 
   const submitSearch = (e: React.FormEvent) => {
@@ -104,39 +136,61 @@ const Header = () => {
 
           {/* Desktop nav */}
           <nav
+            ref={navRef}
             className="hidden lg:flex items-center gap-1"
             aria-label="Primary"
             onMouseLeave={leaveMenu}
           >
             {megaMenus.map((m) => {
-              const isActive = activeMenu === m.id;
+              const isHover = activeMenu === m.id;
+              const isRouteActive = routeActiveId === m.id;
               return (
                 <div
                   key={m.id}
+                  ref={(el) => (itemRefs.current[m.id] = el)}
                   className="relative"
                   onMouseEnter={() => enterMenu(m.id)}
                 >
                   <Link
                     to={m.to}
                     className={cn(
-                      "group inline-flex items-center gap-1 px-3 py-2 text-[12px] font-medium uppercase tracking-[0.18em] transition-colors",
-                      m.accent ? "text-accent" : isActive ? "text-foreground" : "text-foreground/65 hover:text-foreground",
+                      "group inline-flex items-center gap-1 px-3 py-2 text-[12px] font-medium uppercase tracking-[0.18em] transition-colors duration-200",
+                      m.accent
+                        ? "text-accent hover:text-accent"
+                        : isHover || isRouteActive
+                        ? "text-foreground"
+                        : "text-foreground/60 hover:text-foreground",
                     )}
                     onClick={() => setActiveMenu(null)}
+                    aria-current={isRouteActive ? "page" : undefined}
                   >
-                    <span className="relative">
-                      {m.label}
-                      <span
+                    <span>{m.label}</span>
+                    {m.columns.length > 0 && (
+                      <ChevronDown
                         className={cn(
-                          "absolute -bottom-1 left-0 right-0 h-px origin-center scale-x-0 bg-current transition-transform duration-300 group-hover:scale-x-100",
-                          isActive && "scale-x-100",
+                          "h-3 w-3 opacity-0 -translate-y-0.5 transition-all duration-200",
+                          (isHover || isRouteActive) && "opacity-60 translate-y-0",
+                          isHover && "rotate-180",
                         )}
+                        aria-hidden="true"
                       />
-                    </span>
+                    )}
                   </Link>
                 </div>
               );
             })}
+            {/* Sliding indicator */}
+            <span
+              aria-hidden="true"
+              className={cn(
+                "pointer-events-none absolute -bottom-[1px] h-[2px] bg-foreground transition-all duration-300 ease-out",
+                indicator.visible ? "opacity-100" : "opacity-0",
+              )}
+              style={{
+                left: indicator.left,
+                width: indicator.width,
+              }}
+            />
           </nav>
 
           {/* Right icons */}
@@ -171,8 +225,8 @@ const Header = () => {
         {/* Mega-menu panel (desktop) */}
         <div
           className={cn(
-            "absolute left-0 right-0 top-full hidden lg:block border-b border-border bg-background shadow-soft transition-all duration-200 origin-top",
-            activeMenu ? "opacity-100 visible translate-y-0" : "opacity-0 invisible -translate-y-1 pointer-events-none",
+            "absolute left-0 right-0 top-full hidden lg:block border-b border-border bg-background shadow-[0_24px_48px_-24px_hsl(var(--foreground)/0.18)] transition-all duration-300 ease-out origin-top",
+            activeMenu ? "opacity-100 visible translate-y-0" : "opacity-0 invisible -translate-y-2 pointer-events-none",
           )}
           onMouseEnter={() => activeMenu && enterMenu(activeMenu)}
           onMouseLeave={leaveMenu}
@@ -180,26 +234,37 @@ const Header = () => {
           {megaMenus.map((m) => {
             if (m.id !== activeMenu) return null;
             return (
-              <div key={m.id} className="container-page py-10">
-                <div className={cn("grid gap-10", m.feature ? "lg:grid-cols-[1fr_320px]" : "grid-cols-1")}>
+              <div key={m.id} className="container-page py-10 animate-fade-in">
+                <div className={cn("grid gap-12", m.feature ? "lg:grid-cols-[1fr_300px]" : "grid-cols-1")}>
                   <div
-                    className="grid gap-10"
+                    className="grid gap-x-10 gap-y-8"
                     style={{ gridTemplateColumns: `repeat(${Math.min(m.columns.length, 4)}, minmax(0, 1fr))` }}
                   >
-                    {m.columns.map((col) => (
-                      <div key={col.heading}>
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-muted-foreground mb-4 pb-2 border-b border-border">
-                          {col.heading}
-                        </p>
-                        <ul className="space-y-2.5">
+                    {m.columns.map((col, idx) => (
+                      <div
+                        key={col.heading}
+                        className="animate-fade-in"
+                        style={{ animationDelay: `${idx * 60}ms`, animationFillMode: "backwards" }}
+                      >
+                        <div className="flex items-center gap-2 mb-5">
+                          <span className="h-px w-4 bg-foreground/40" />
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+                            {col.heading}
+                          </p>
+                        </div>
+                        <ul className="space-y-1">
                           {col.links.map((l) => (
                             <li key={l.label}>
                               <Link
                                 to={l.to}
-                                className="group inline-flex items-center text-[13px] text-foreground/75 hover:text-foreground transition-colors"
+                                className="group flex items-center gap-2 py-1.5 text-[13.5px] text-foreground/75 hover:text-foreground transition-colors"
                                 onClick={() => setActiveMenu(null)}
                               >
-                                <span className="transition-transform duration-200 group-hover:translate-x-1">{l.label}</span>
+                                <span className="relative">
+                                  {l.label}
+                                  <span className="absolute left-0 -bottom-0.5 h-px w-full origin-left scale-x-0 bg-foreground transition-transform duration-300 group-hover:scale-x-100" />
+                                </span>
+                                <ArrowUpRight className="h-3 w-3 opacity-0 -translate-x-1 transition-all duration-200 group-hover:opacity-60 group-hover:translate-x-0" />
                               </Link>
                             </li>
                           ))}
@@ -210,16 +275,21 @@ const Header = () => {
                   {m.feature && (
                     <Link
                       to={m.feature.to}
-                      className="group relative block overflow-hidden rounded-sm bg-secondary aspect-[4/5]"
+                      className="group relative block overflow-hidden rounded-sm bg-secondary aspect-[4/5] animate-fade-in"
+                      style={{ animationDelay: "180ms", animationFillMode: "backwards" }}
                       onClick={() => setActiveMenu(null)}
                     >
-                      <div className="absolute inset-0 bg-gradient-to-br from-accent/15 to-foreground/30" />
-                      <div className="absolute inset-0 p-5 flex flex-col justify-end text-background">
-                        <p className="text-[10px] uppercase tracking-[0.25em] opacity-80">Featured</p>
-                        <h4 className="mt-1 font-serif text-2xl">{m.feature.title}</h4>
-                        <p className="mt-1 text-xs opacity-90">{m.feature.copy}</p>
-                        <p className="mt-3 text-[11px] uppercase tracking-widest underline-offset-4 group-hover:underline">
-                          {m.feature.cta} →
+                      <div className="absolute inset-0 bg-gradient-to-br from-accent/30 via-foreground/20 to-foreground/60 transition-transform duration-700 group-hover:scale-105" />
+                      <div className="absolute inset-0 p-6 flex flex-col justify-end text-background">
+                        <span className="inline-flex items-center gap-1.5 self-start rounded-full bg-background/15 backdrop-blur-sm px-2.5 py-1 text-[9px] uppercase tracking-[0.25em]">
+                          <span className="h-1 w-1 rounded-full bg-background animate-pulse" />
+                          Featured
+                        </span>
+                        <h4 className="mt-3 font-serif text-2xl leading-tight">{m.feature.title}</h4>
+                        <p className="mt-1.5 text-xs opacity-90 leading-relaxed">{m.feature.copy}</p>
+                        <p className="mt-4 inline-flex items-center gap-1 text-[11px] uppercase tracking-[0.2em] font-medium">
+                          {m.feature.cta}
+                          <ArrowUpRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                         </p>
                       </div>
                     </Link>
@@ -275,32 +345,44 @@ const Header = () => {
             <X className="h-4 w-4" />
           </button>
         </div>
-        <nav className="flex-1 overflow-y-auto px-5 py-4">
+        <nav className="flex-1 overflow-y-auto px-5 py-2">
           {megaMenus.map((m) => {
             const open = mobileExpanded === m.id;
             return (
-              <div key={m.id} className="border-b border-border">
+              <div key={m.id} className="border-b border-border last:border-b-0">
                 <button
                   type="button"
                   onClick={() => setMobileExpanded(open ? null : m.id)}
                   className={cn(
-                    "flex items-center justify-between w-full py-4 text-sm font-medium uppercase tracking-[0.15em]",
-                    m.accent ? "text-accent" : "text-foreground",
+                    "flex items-center justify-between w-full py-4 text-sm font-medium uppercase tracking-[0.18em] transition-colors",
+                    m.accent ? "text-accent" : open ? "text-foreground" : "text-foreground/80 hover:text-foreground",
                   )}
                   aria-expanded={open}
                 >
-                  {m.label}
-                  <ChevronDown className={cn("h-4 w-4 transition-transform", open && "rotate-180")} />
+                  <span className="flex items-center gap-3">
+                    <span
+                      className={cn(
+                        "h-1 w-1 rounded-full bg-current transition-all duration-300",
+                        open ? "opacity-100 scale-100" : "opacity-0 scale-50",
+                      )}
+                    />
+                    {m.label}
+                  </span>
+                  <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform duration-300", open && "rotate-180 text-foreground")} />
                 </button>
                 {open && (
-                  <div className="pb-4 pl-2 space-y-3 animate-fade-up">
+                  <div className="pb-5 pl-4 space-y-4 animate-accordion-down">
                     {m.columns.map((col) => (
                       <div key={col.heading}>
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground mb-2">{col.heading}</p>
-                        <ul className="space-y-2">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-muted-foreground mb-2">{col.heading}</p>
+                        <ul className="space-y-1 border-l border-border/60 pl-3">
                           {col.links.map((l) => (
                             <li key={l.label}>
-                              <Link to={l.to} onClick={() => setMobileOpen(false)} className="block py-1 text-sm text-foreground/75 hover:text-foreground">
+                              <Link
+                                to={l.to}
+                                onClick={() => setMobileOpen(false)}
+                                className="block py-1.5 text-sm text-foreground/75 hover:text-foreground hover:translate-x-1 transition-all duration-200"
+                              >
                                 {l.label}
                               </Link>
                             </li>
