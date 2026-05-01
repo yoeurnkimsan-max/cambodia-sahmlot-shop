@@ -1,619 +1,425 @@
-import { Link, useNavigate, useLocation } from "react-router-dom";
-import { useEffect, useState, useRef, useMemo, useCallback } from "react";
-import {
-  Menu, Search, ShoppingBag, User, X, ChevronDown, ChevronUp
-} from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { ArrowUpRight, ChevronDown, Heart, Menu, Search, ShoppingBag, User, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/context/CartContext";
+import { useWishlist } from "@/context/WishlistContext";
+import { megaMenus } from "@/data/menu";
 import { cn } from "@/lib/utils";
-import FocusTrap from "focus-trap-react";
-
-// Types
-interface DropdownItem {
-  heading: string;
-  items: string[];
-}
-
-interface DropdownData {
-  title: string;
-  columns: DropdownItem[];
-}
-
-// Dropdown data structure with heading property on all columns
-const dropdownData: Record<string, DropdownData> = {
-  newIn: {
-    title: "New In",
-    columns: [
-      {
-        heading: "New Arrivals",
-        items: ["All", "New In Top", "New In Bottom", "New In Outerwear", "New In Shoes", "New In Accessories"]
-      }
-    ]
-  },
-  clothing: {
-    title: "Clothing",
-    columns: [
-      {
-        heading: "Clothing",
-        items: ["All", "T-shirts", "Blazers & Jackets", "Hoodies & Sweatshirts", "Shorts"]
-      },
-      {
-        heading: "Shop By Style",
-        items: ["All", "Polo Shirts", "Vests & Cardigans", "Jeans & Trousers", "Underwear"]
-      },
-      {
-        heading: "Best Sellers",
-        items: ["Best Sellers", "Casual", "Office Wear"]
-      }
-    ]
-  },
-  accessories: {
-    title: "Accessories",
-    columns: [
-      {
-        heading: "Accessories",
-        items: ["All", "Caps & Hats", "Socks", "Bags", "Glasses", "Merchandise"]
-      }
-    ]
-  },
-  shoes: {
-    title: "Shoes",
-    columns: [
-      {
-        heading: "Footwear",
-        items: ["All", "Sandals", "Sneakers", "Loafers", "Boots"]
-      }
-    ]
-  },
-  collections: {
-    title: "Collections",
-    columns: [
-      {
-        heading: "Featured",
-        items: ["All", "Urban Getaway", "Urban Executive", "Checkmate In Motion", "Invasion Of Identity", "Summer 2026", "Fiery Energy", "Back To Business", "Post Modern Academy"]
-      }
-    ]
-  }
-};
-
-const simpleNav = [
-  { to: "/shop?cat=men", label: "MEN" },
-  { to: "/shop?cat=women", label: "WOMEN" },
-];
-
-// Placeholder image - replace with your actual default image
-const DEFAULT_IMAGE = "https://zand.sgp1.cdn.digitaloceanspaces.com/catalog/products/2026-02/21226011580/PTAK9376.jpg";
-
-// Reusable dropdown component
-interface DropdownItemComponentProps {
-  id: string;
-  data: DropdownData;
-  isClothing?: boolean;
-  openDropdown: string | null;
-  onDropdownEnter: (dropdown: string) => void;
-  onDropdownLeave: () => void;
-  renderDropdownContent: (data: DropdownData, isClothing: boolean) => React.ReactNode;
-}
-
-const DropdownItemComponent: React.FC<DropdownItemComponentProps> = ({
-  id,
-  data,
-  isClothing = false,
-  openDropdown,
-  onDropdownEnter,
-  onDropdownLeave,
-  renderDropdownContent
-}) => {
-  const isOpen = openDropdown === id;
-
-  return (
-    <div
-      className="relative"
-      onMouseEnter={() => onDropdownEnter(id)}
-      onMouseLeave={onDropdownLeave}
-    >
-      <button
-        className={cn(
-          "flex items-center gap-1 text-[13px] font-light tracking-[0.08em] transition-colors py-3 cursor-pointer",
-          isOpen ? "text-black" : "text-gray-500 hover:text-black"
-        )}
-        aria-expanded={isOpen}
-        aria-haspopup="true"
-      >
-        {data.title}
-        <ChevronDown className={cn(
-          "h-3 w-3 transition-all duration-300",
-          isOpen && "rotate-180"
-        )} />
-      </button>
-
-      <div
-        className={cn(
-          "fixed left-0 right-0 top-[6.5rem] transition-all duration-300 z-50",
-          isOpen ? "opacity-100 visible translate-y-0" : "opacity-0 invisible -translate-y-2 pointer-events-none"
-        )}
-        aria-hidden={!isOpen}
-      >
-        <div className="w-full bg-white shadow-[0_8px_20px_-8px_rgba(0,0,0,0.15)] border-t border-gray-100">
-          <div className="container-page py-8">
-            {renderDropdownContent(data, isClothing)}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 const Header = () => {
   const { count, openCart } = useCart();
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [query, setQuery] = useState("");
-  const [itemsVisible, setItemsVisible] = useState(false);
-  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
-  const [mobileDropdownsOpen, setMobileDropdownsOpen] = useState<Record<string, boolean>>({});
-
-  const dropdownTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const searchInputRef = useRef<HTMLInputElement>(null);
-  const isMounted = useRef(false);
-
+  const { count: wishCount } = useWishlist();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const toggleMobileDropdown = useCallback((key: string) => {
-    setMobileDropdownsOpen(prev => ({ ...prev, [key]: !prev[key] }));
-  }, []);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [activeMenu, setActiveMenu] = useState<string | null>(null);
+  const [mobileExpanded, setMobileExpanded] = useState<string | null>(null);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // Prevent body scroll when mobile menu is open
+  // Determine the active top menu based on the current route/query
+  const routeActiveId = (() => {
+    const params = new URLSearchParams(location.search);
+    const cat = params.get("cat");
+    const collection = params.get("collection");
+    const q = params.get("q");
+    if (location.pathname !== "/shop") return null;
+    if (q === "sale") return "sale";
+    if (cat === "new") return "new";
+    if (cat === "men") return "men";
+    if (cat === "women") return "women";
+    if (collection) return "collections";
+    return "clothing";
+  })();
+
+  // Close all panels on route change
   useEffect(() => {
-    if (mobileOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-    return () => { document.body.style.overflow = ""; };
-  }, [mobileOpen]);
-
-  // Animation timing for mobile menu items
-  useEffect(() => {
-    if (!isMounted.current) {
-      isMounted.current = true;
-      return;
-    }
-
-    if (mobileOpen) {
-      timerRef.current = setTimeout(() => setItemsVisible(true), 120);
-    } else {
-      if (timerRef.current) clearTimeout(timerRef.current);
-      setItemsVisible(false);
-    }
-    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
-  }, [mobileOpen]);
-
-  // Close dropdowns and mobile menu on route change
-  useEffect(() => {
-    setOpenDropdown(null);
+    setActiveMenu(null);
     setMobileOpen(false);
     setSearchOpen(false);
-  }, [location]);
+  }, [location.pathname, location.search]);
 
-  // Focus search input when opened
+  // Body scroll lock for drawers / open mega-menu
   useEffect(() => {
-    if (searchOpen && searchInputRef.current) {
-      searchInputRef.current.focus();
-    }
+    const lock = mobileOpen || activeMenu !== null;
+    document.body.style.overflow = lock ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [mobileOpen, activeMenu]);
+
+  // Esc closes everything
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setActiveMenu(null);
+        setMobileOpen(false);
+        setSearchOpen(false);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  useEffect(() => {
+    if (searchOpen) searchInputRef.current?.focus();
   }, [searchOpen]);
 
-  const submitSearch = useCallback((e: React.FormEvent) => {
+  const enterMenu = (id: string) => {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    setActiveMenu(id);
+  };
+  const leaveMenu = () => {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    closeTimer.current = setTimeout(() => setActiveMenu(null), 140);
+  };
+
+  const submitSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (query.trim()) {
-      navigate(`/shop?q=${encodeURIComponent(query.trim())}`);
-      setSearchOpen(false);
-      setQuery("");
-    }
-  }, [query, navigate]);
+    if (!query.trim()) return;
+    navigate(`/shop?q=${encodeURIComponent(query.trim())}`);
+    setSearchOpen(false);
+    setQuery("");
+  };
 
-  const handleDropdownEnter = useCallback((dropdown: string) => {
-    if (dropdownTimeoutRef.current) clearTimeout(dropdownTimeoutRef.current);
-    setOpenDropdown(dropdown);
-  }, []);
-
-  const handleDropdownLeave = useCallback(() => {
-    dropdownTimeoutRef.current = setTimeout(() => {
-      setOpenDropdown(null);
-    }, 150);
-  }, []);
-
-  const handleKeyDown = useCallback((e: React.KeyboardEvent, dropdown: string) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      setOpenDropdown(openDropdown === dropdown ? null : dropdown);
-    }
-  }, [openDropdown]);
-
-  const isActive = useCallback((path: string) => {
-    const searchParams = new URLSearchParams(location.search);
-    if (path.includes("cat=men")) {
-      return searchParams.get("cat") === "men";
-    }
-    if (path.includes("cat=women")) {
-      return searchParams.get("cat") === "women";
-    }
-    return false;
-  }, [location.search]);
-
-  // Reusable dropdown content renderer
-  const renderDropdownContent = useCallback((data: DropdownData, isClothing: boolean = false) => {
-    if (isClothing) {
-      return (
-        <div className="grid grid-cols-3 gap-8 max-w-5xl mx-auto">
-          {data.columns.map((col, idx) => (
-            <div key={idx} className="space-y-4">
-              {col.heading && col.heading !== "" && (
-                <div className="flex items-center gap-2 border-b border-gray-100 pb-2">
-                  <span className="w-0.5 h-3 bg-amber-400 rounded-full" />
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-400">
-                    {col.heading}
-                  </p>
-                </div>
-              )}
-              <div className="grid grid-cols-2 gap-x-4 gap-y-3">
-                {col.items.map((item) => (
-                  <Link
-                    key={item}
-                    to={`/shop?category=${item.toLowerCase().replace(/ /g, "-")}`}
-                    className="flex items-center gap-3 text-[13px] text-gray-600 hover:text-black transition-all duration-200 group/link"
-                    onClick={() => setOpenDropdown(null)}
-                  >
-                    <div className="w-10 h-10 overflow-hidden rounded-full bg-gray-100 flex-shrink-0 ring-1 ring-gray-200 group-hover/link:ring-amber-400 transition-all duration-300">
-                      <img
-                        src={DEFAULT_IMAGE}
-                        alt={item}
-                        className="w-full h-full object-cover object-top group-hover/link:scale-110 transition-transform duration-300"
-                        loading="lazy"
-                      />
-                    </div>
-                    <span className="group-hover/link:translate-x-1 transition-transform duration-200">{item}</span>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      );
-    }
-
-    return (
-      <div className="flex justify-center">
-        {data.columns.map((col, idx) => (
-          <div key={idx} className="min-w-[280px]">
-            {col.heading && col.heading !== "" && (
-              <div className="flex items-center gap-2 border-b border-gray-100 pb-2 mb-4">
-                <span className="w-0.5 h-3 bg-amber-400 rounded-full" />
-                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-400">
-                  {col.heading}
-                </p>
-              </div>
-            )}
-            <div className="grid grid-cols-2 gap-x-6 gap-y-3">
-              {col.items.map((item) => (
-                <Link
-                  key={item}
-                  to={`/shop?category=${item.toLowerCase().replace(/ /g, "-")}`}
-                  className="flex items-center gap-3 text-[13px] text-gray-600 hover:text-black transition-all duration-200 group/link"
-                  onClick={() => setOpenDropdown(null)}
-                >
-                  <div className="w-10 h-10 overflow-hidden rounded-full bg-gray-100 flex-shrink-0 ring-1 ring-gray-200 group-hover/link:ring-amber-400 transition-all duration-300">
-                    <img
-                      src={DEFAULT_IMAGE}
-                      alt={item}
-                      className="w-full h-full object-cover object-top group-hover/link:scale-110 transition-transform duration-300"
-                      loading="lazy"
-                    />
-                  </div>
-                  <span className="group-hover/link:translate-x-1 transition-transform duration-200">{item}</span>
-                </Link>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  }, []);
-
-  // Memoized dropdown content to prevent unnecessary re-renders
-  const memoizedRenderDropdownContent = useMemo(
-    () => renderDropdownContent,
-    [renderDropdownContent]
+  const Logo = ({ onClick }: { onClick?: () => void }) => (
+    <Link
+      to="/"
+      onClick={onClick}
+      className="font-serif text-xl font-semibold tracking-tight inline-flex items-center"
+      aria-label="Sahmlot home"
+    >
+      Sahml
+      <span className="mx-[1px] inline-block h-1.5 w-1.5 rounded-full bg-accent" />
+      t
+    </Link>
   );
 
   return (
     <>
-      <header className="sticky top-0 z-40 w-full border-b border-gray-100 bg-white">
-        <div className="container-page flex h-14 items-center justify-between lg:h-auto lg:flex-col lg:py-0">
+      <header className="sticky top-0 z-header w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+        {/* Top bar */}
+        <div className="container-page flex h-14 items-center justify-between gap-4 lg:h-16">
+          <button
+            type="button"
+            aria-label="Open menu"
+            className="lg:hidden p-2 -ml-2 text-foreground/70 hover:text-foreground transition-colors"
+            onClick={() => setMobileOpen(true)}
+          >
+            <Menu className="h-5 w-5" />
+          </button>
 
-          {/* Top row */}
-          <div className="flex w-full items-center justify-between lg:h-[60px]">
-            {/* MEN / WOMEN - Left side */}
-            <div className="hidden lg:flex lg:items-center lg:gap-6">
-              {simpleNav.map((n) => (
-                <Link
-                  key={n.to}
-                  to={n.to}
-                  className={cn(
-                    "text-[12px] font-bold tracking-[0.15em] uppercase transition-all duration-200 py-1.5 cursor-pointer",
-                    isActive(n.to)
-                      ? "text-black border-b-2 border-black"
-                      : "text-gray-500 hover:text-black hover:border-b-2 hover:border-gray-300"
-                  )}
-                >
-                  {n.label}
-                </Link>
-              ))}
-            </div>
-
-            {/* Mobile menu button */}
-            <button
-              aria-label="Open menu"
-              className="lg:hidden -ml-1 p-2 text-gray-600 hover:text-black transition-colors cursor-pointer"
-              onClick={() => setMobileOpen(true)}
-            >
-              <Menu className="h-5 w-5" />
-            </button>
-
-            {/* Logo - Center */}
-            <Link
-              to="/"
-              className="flex items-center font-serif text-lg font-semibold tracking-tight lg:text-xl cursor-pointer"
-              aria-label="Home"
-            >
-              Sahml
-              <span className="inline-block h-2 w-2 rounded-full border-2 border-amber-400 ml-0.5" />
-              t
-            </Link>
-
-            {/* Right side icons */}
-            <div className="flex items-center gap-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label="Search"
-                className="h-8 w-8 text-gray-500 hover:text-black cursor-pointer"
-                onClick={() => setSearchOpen(s => !s)}
-              >
-                <Search className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label="Account"
-                className="hidden sm:inline-flex h-8 w-8 text-gray-500 hover:text-black cursor-pointer"
-              >
-                <User className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label="Cart"
-                onClick={openCart}
-                className="relative h-8 w-8 text-gray-500 hover:text-black cursor-pointer"
-              >
-                <ShoppingBag className="h-4 w-4" />
-                {count > 0 && (
-                  <span
-                    className="absolute -top-0.5 -right-0.5 grid h-4 w-4 place-items-center rounded-full bg-amber-400 text-[9px] font-semibold text-black"
-                    aria-label={`${count} items in cart`}
-                  >
-                    {count}
-                  </span>
-                )}
-              </Button>
-            </div>
+          <div className="flex-1 flex justify-center lg:flex-none lg:justify-start">
+            <Logo />
           </div>
 
-          {/* Bottom nav - Desktop dropdowns */}
+          {/* Desktop nav */}
           <nav
-            className="hidden lg:flex w-full items-center justify-center gap-10 relative"
-            aria-label="Main navigation"
+            className="hidden lg:flex items-center"
+            aria-label="Primary"
+            onMouseLeave={leaveMenu}
           >
-            <DropdownItemComponent
-              id="newIn"
-              data={dropdownData.newIn}
-              openDropdown={openDropdown}
-              onDropdownEnter={handleDropdownEnter}
-              onDropdownLeave={handleDropdownLeave}
-              renderDropdownContent={memoizedRenderDropdownContent}
-            />
-
-            <DropdownItemComponent
-              id="clothing"
-              data={dropdownData.clothing}
-              isClothing={true}
-              openDropdown={openDropdown}
-              onDropdownEnter={handleDropdownEnter}
-              onDropdownLeave={handleDropdownLeave}
-              renderDropdownContent={memoizedRenderDropdownContent}
-            />
-
-            <DropdownItemComponent
-              id="accessories"
-              data={dropdownData.accessories}
-              openDropdown={openDropdown}
-              onDropdownEnter={handleDropdownEnter}
-              onDropdownLeave={handleDropdownLeave}
-              renderDropdownContent={memoizedRenderDropdownContent}
-            />
-
-            <DropdownItemComponent
-              id="shoes"
-              data={dropdownData.shoes}
-              openDropdown={openDropdown}
-              onDropdownEnter={handleDropdownEnter}
-              onDropdownLeave={handleDropdownLeave}
-              renderDropdownContent={memoizedRenderDropdownContent}
-            />
-
-            <DropdownItemComponent
-              id="collections"
-              data={dropdownData.collections}
-              openDropdown={openDropdown}
-              onDropdownEnter={handleDropdownEnter}
-              onDropdownLeave={handleDropdownLeave}
-              renderDropdownContent={memoizedRenderDropdownContent}
-            />
+            {megaMenus.map((m) => {
+              const isHover = activeMenu === m.id;
+              const isRouteActive = routeActiveId === m.id;
+              const isActive = isHover || isRouteActive;
+              return (
+                <div
+                  key={m.id}
+                  className="relative"
+                  onMouseEnter={() => enterMenu(m.id)}
+                  onFocus={() => enterMenu(m.id)}
+                >
+                  <Link
+                    to={m.to}
+                    onClick={() => setActiveMenu(null)}
+                    aria-current={isRouteActive ? "page" : undefined}
+                    className={cn(
+                      "group relative inline-flex items-center gap-1.5 px-4 py-2 text-[12px] font-medium uppercase tracking-[0.2em] transition-colors duration-200",
+                      m.accent
+                        ? "text-accent"
+                        : isActive
+                        ? "text-foreground"
+                        : "text-foreground/65 hover:text-foreground",
+                    )}
+                  >
+                    <span className="relative">
+                      {m.label}
+                      {/* refined underline: thin, animated */}
+                      <span
+                        aria-hidden="true"
+                        className={cn(
+                          "pointer-events-none absolute -bottom-1 left-0 h-px w-full origin-center bg-current transition-transform duration-300 ease-out",
+                          isActive ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100",
+                        )}
+                      />
+                    </span>
+                    {m.columns.length > 0 && (
+                      <ChevronDown
+                        className={cn(
+                          "h-3 w-3 transition-all duration-300 ease-out",
+                          isHover ? "rotate-180 opacity-90" : "opacity-50",
+                        )}
+                        aria-hidden="true"
+                      />
+                    )}
+                    {/* Active route dot */}
+                    {isRouteActive && !isHover && (
+                      <span aria-hidden="true" className="absolute left-1/2 -translate-x-1/2 -bottom-2 h-1 w-1 rounded-full bg-current" />
+                    )}
+                  </Link>
+                </div>
+              );
+            })}
           </nav>
+
+          {/* Right icons */}
+          <div className="flex items-center gap-0.5">
+            <Button variant="ghost" size="icon" aria-label="Search" className="h-9 w-9 text-foreground/70 hover:text-foreground" onClick={() => setSearchOpen((s) => !s)}>
+              <Search className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon" aria-label="Account" className="hidden sm:inline-flex h-9 w-9 text-foreground/70 hover:text-foreground">
+              <User className="h-4 w-4" />
+            </Button>
+            <Button asChild variant="ghost" size="icon" aria-label="Wishlist" className="relative h-9 w-9 text-foreground/70 hover:text-foreground">
+              <Link to="/wishlist">
+                <Heart className="h-4 w-4" />
+                {wishCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 grid h-4 w-4 place-items-center rounded-full bg-accent text-[10px] font-semibold text-accent-foreground">
+                    {wishCount}
+                  </span>
+                )}
+              </Link>
+            </Button>
+            <Button variant="ghost" size="icon" aria-label="Cart" onClick={openCart} className="relative h-9 w-9 text-foreground/70 hover:text-foreground">
+              <ShoppingBag className="h-4 w-4" />
+              {count > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 grid h-4 w-4 place-items-center rounded-full bg-foreground text-[10px] font-semibold text-background">
+                  {count}
+                </span>
+              )}
+            </Button>
+          </div>
+        </div>
+
+        {/* Mega-menu panel (desktop) */}
+        <div
+          className={cn(
+            "absolute left-0 right-0 top-full hidden lg:block border-b border-border bg-background origin-top",
+            "transition-[opacity,transform,visibility] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]",
+            "shadow-[0_24px_48px_-24px_hsl(var(--foreground)/0.18)]",
+            activeMenu ? "opacity-100 visible translate-y-0" : "opacity-0 invisible -translate-y-2 pointer-events-none",
+          )}
+          onMouseEnter={() => activeMenu && enterMenu(activeMenu)}
+          onMouseLeave={leaveMenu}
+        >
+          {megaMenus.map((m) => {
+            if (m.id !== activeMenu) return null;
+            return (
+              <div key={m.id} className="container-page py-10">
+                <div className={cn("grid gap-12", m.feature ? "lg:grid-cols-[1fr_320px]" : "grid-cols-1")}>
+                  <div
+                    className="grid gap-x-10 gap-y-8"
+                    style={{ gridTemplateColumns: `repeat(${Math.min(m.columns.length, 4)}, minmax(0, 1fr))` }}
+                  >
+                    {m.columns.map((col, idx) => (
+                      <div
+                        key={col.heading}
+                        className="animate-fade-up"
+                        style={{ animationDelay: `${idx * 70}ms`, animationFillMode: "backwards" }}
+                      >
+                        <div className="flex items-center gap-2 mb-5">
+                          <span className="h-px w-5 bg-foreground/40" />
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-muted-foreground">
+                            {col.heading}
+                          </p>
+                        </div>
+                        <ul className="space-y-0.5">
+                          {col.links.map((l) => (
+                            <li key={l.label}>
+                              <Link
+                                to={l.to}
+                                className="group flex items-center gap-2 py-2 text-[13.5px] text-foreground/75 hover:text-foreground transition-colors"
+                                onClick={() => setActiveMenu(null)}
+                              >
+                                <span className="relative">
+                                  {l.label}
+                                  <span className="absolute left-0 -bottom-0.5 h-px w-full origin-left scale-x-0 bg-foreground transition-transform duration-300 ease-out group-hover:scale-x-100" />
+                                </span>
+                                {l.tag && (
+                                  <span
+                                    className={cn(
+                                      "rounded-full px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-[0.18em]",
+                                      l.tag === "new" ? "bg-foreground text-background" : "bg-accent/15 text-accent",
+                                    )}
+                                  >
+                                    {l.tag}
+                                  </span>
+                                )}
+                                <ArrowUpRight className="h-3 w-3 opacity-0 -translate-x-1 transition-all duration-300 ease-out group-hover:opacity-60 group-hover:translate-x-0" />
+                              </Link>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
+                  </div>
+
+                  {m.feature && (
+                    <Link
+                      to={m.feature.to}
+                      onClick={() => setActiveMenu(null)}
+                      className="group relative block overflow-hidden rounded-sm bg-secondary aspect-[4/5] animate-fade-up"
+                      style={{ animationDelay: "200ms", animationFillMode: "backwards" }}
+                    >
+                      <img
+                        src={m.feature.image}
+                        alt={m.feature.title}
+                        loading="lazy"
+                        width={800}
+                        height={1024}
+                        className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-foreground/75 via-foreground/20 to-transparent" />
+                      <div className="absolute inset-0 p-6 flex flex-col justify-end text-background">
+                        <span className="inline-flex items-center gap-1.5 self-start rounded-full bg-background/15 backdrop-blur-sm px-2.5 py-1 text-[9px] uppercase tracking-[0.28em]">
+                          <span className="h-1 w-1 rounded-full bg-background animate-pulse" />
+                          Featured
+                        </span>
+                        <h4 className="mt-3 font-serif text-2xl leading-tight">{m.feature.title}</h4>
+                        <p className="mt-1.5 text-xs opacity-90 leading-relaxed">{m.feature.copy}</p>
+                        <p className="mt-4 inline-flex items-center gap-1 text-[11px] uppercase tracking-[0.22em] font-medium">
+                          {m.feature.cta}
+                          <ArrowUpRight className="h-3.5 w-3.5 transition-transform duration-300 ease-out group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                        </p>
+                      </div>
+                    </Link>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
 
         {/* Search bar */}
         {searchOpen && (
-          <div
-            className="border-t border-gray-100 bg-white animate-in slide-in-from-top-1 duration-200"
-            role="search"
-          >
+          <div className="border-t border-border bg-background animate-fade-up">
             <form onSubmit={submitSearch} className="container-page flex items-center gap-3 py-3">
-              <Search className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />
+              <Search className="h-4 w-4 text-muted-foreground flex-shrink-0" />
               <input
                 ref={searchInputRef}
                 value={query}
-                onChange={e => setQuery(e.target.value)}
-                placeholder="Search products..."
-                className="w-full bg-transparent text-sm font-light outline-none placeholder:text-gray-400"
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search shirts, polos, linen…"
+                className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
                 aria-label="Search products"
               />
-              <button
-                type="button"
-                onClick={() => setSearchOpen(false)}
-                className="text-gray-400 hover:text-black transition-colors cursor-pointer"
-                aria-label="Close search"
-              >
-                <X className="h-3.5 w-3.5" />
+              <button type="button" onClick={() => setSearchOpen(false)} className="text-muted-foreground hover:text-foreground" aria-label="Close search">
+                <X className="h-4 w-4" />
               </button>
             </form>
           </div>
         )}
       </header>
 
-      {/* Mobile menu backdrop */}
+      {/* Mobile drawer */}
       <div
         onClick={() => setMobileOpen(false)}
         className={cn(
-          "fixed inset-0 z-50 bg-black/50 backdrop-blur-sm transition-opacity duration-500 lg:hidden",
-          mobileOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+          "fixed inset-0 z-overlay bg-foreground/40 backdrop-blur-sm transition-opacity duration-300 lg:hidden",
+          mobileOpen ? "opacity-100" : "opacity-0 pointer-events-none",
         )}
         aria-hidden="true"
       />
-
-      {/* Mobile menu drawer with focus trap */}
-      <FocusTrap active={mobileOpen}>
-        <aside
-          className={cn(
-            "fixed left-0 top-0 z-50 h-full w-[85%] max-w-[320px] bg-white flex flex-col lg:hidden",
-            "transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]",
-            "shadow-2xl",
-            mobileOpen ? "translate-x-0" : "-translate-x-full"
-          )}
-          aria-label="Mobile navigation menu"
-          aria-hidden={!mobileOpen}
-          aria-modal={mobileOpen}
-          role={mobileOpen ? "dialog" : undefined}
-        >
-          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-            <Link
-              to="/"
-              onClick={() => setMobileOpen(false)}
-              className="font-serif text-base font-semibold tracking-tight flex items-center cursor-pointer"
-              aria-label="Home"
-            >
-              Sahml
-              <span className="inline-block h-2 w-2 rounded-full border-2 border-amber-400 ml-0.5" />
-              t
-            </Link>
-            <button
-              onClick={() => setMobileOpen(false)}
-              aria-label="Close menu"
-              className="p-1.5 rounded-full text-gray-400 hover:text-black hover:bg-gray-100 transition-all cursor-pointer"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-
-          <nav
-            className="flex-1 overflow-y-auto px-5 pt-5 pb-4"
-            aria-label="Mobile navigation"
-          >
-            <div className="flex gap-6 mb-6 pb-3 border-b border-gray-100">
-              <Link
-                to="/shop?cat=men"
-                onClick={() => setMobileOpen(false)}
-                className="text-[15px] font-bold uppercase tracking-wide text-gray-600 hover:text-black cursor-pointer"
-              >
-                MEN
-              </Link>
-              <Link
-                to="/shop?cat=women"
-                onClick={() => setMobileOpen(false)}
-                className="text-[15px] font-bold uppercase tracking-wide text-gray-600 hover:text-black cursor-pointer"
-              >
-                WOMEN
-              </Link>
-            </div>
-
-            {Object.entries(dropdownData).map(([key, data], idx) => {
-              const isOpen = mobileDropdownsOpen[key] || false;
-              return (
-                <div
-                  key={key}
-                  className="border-b border-gray-100 py-2"
-                  style={{
-                    opacity: itemsVisible ? 1 : 0,
-                    transform: itemsVisible ? "translateX(0)" : "translateX(-10px)",
-                    transition: `opacity 0.3s ease ${idx * 60}ms, transform 0.3s ease ${idx * 60}ms`,
-                  }}
-                >
-                  <button
-                    onClick={() => toggleMobileDropdown(key)}
-                    className="flex items-center justify-between w-full py-3 text-[14px] font-light text-gray-700 cursor-pointer"
-                    aria-expanded={isOpen}
-                  >
-                    {data.title}
-                    {isOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-                  </button>
-                  {isOpen && (
-                    <div className="ml-3 pb-2 space-y-1 animate-in slide-in-from-top-2 duration-200">
-                      {data.columns.map((col, colIdx) => (
-                        <div key={colIdx}>
-                          {col.heading && col.heading !== "" && (
-                            <p className="text-[9px] font-medium uppercase tracking-[0.1em] text-gray-400 mt-2 mb-1">
-                              {col.heading}
-                            </p>
-                          )}
-                          {col.items.map((item) => (
-                            <Link
-                              key={item}
-                              to={`/shop?category=${item.toLowerCase().replace(/ /g, "-")}`}
-                              onClick={() => setMobileOpen(false)}
-                              className="block py-2 text-[13px] text-gray-500 hover:text-black transition-colors pl-2 cursor-pointer"
-                            >
-                              {item}
-                            </Link>
-                          ))}
-                        </div>
-                      ))}
-                    </div>
+      <aside
+        className={cn(
+          "fixed left-0 top-0 z-drawer h-full w-[85%] max-w-[340px] bg-background flex flex-col lg:hidden shadow-card",
+          "transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]",
+          mobileOpen ? "translate-x-0" : "-translate-x-full",
+        )}
+        aria-label="Mobile navigation"
+        aria-hidden={!mobileOpen}
+      >
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+          <Logo onClick={() => setMobileOpen(false)} />
+          <button onClick={() => setMobileOpen(false)} aria-label="Close menu" className="p-1.5 text-muted-foreground hover:text-foreground transition-colors">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <nav className="flex-1 overflow-y-auto px-5 py-2">
+          {megaMenus.map((m) => {
+            const open = mobileExpanded === m.id;
+            const isRouteActive = routeActiveId === m.id;
+            return (
+              <div key={m.id} className="border-b border-border last:border-b-0">
+                <button
+                  type="button"
+                  onClick={() => setMobileExpanded(open ? null : m.id)}
+                  className={cn(
+                    "flex items-center justify-between w-full py-4 text-sm font-medium uppercase tracking-[0.2em] transition-colors",
+                    m.accent ? "text-accent" : open || isRouteActive ? "text-foreground" : "text-foreground/80 hover:text-foreground",
                   )}
-                </div>
-              );
-            })}
-          </nav>
-
-          <div className="px-5 py-4 border-t border-gray-100 space-y-3">
-            <p className="text-[9px] text-gray-300 font-light tracking-wide text-center">
-              Made in Cambodia · Natural fibers
-            </p>
-          </div>
-        </aside>
-      </FocusTrap>
+                  aria-expanded={open}
+                >
+                  <span className="flex items-center gap-3">
+                    <span
+                      className={cn(
+                        "h-1.5 w-1.5 rounded-full bg-current transition-all duration-300",
+                        open || isRouteActive ? "opacity-100 scale-100" : "opacity-0 scale-50",
+                      )}
+                    />
+                    {m.label}
+                  </span>
+                  <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform duration-300", open && "rotate-180 text-foreground")} />
+                </button>
+                {open && (
+                  <div className="pb-5 pl-4 space-y-4 animate-accordion-down">
+                    {m.columns.map((col) => (
+                      <div key={col.heading}>
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-muted-foreground mb-2">{col.heading}</p>
+                        <ul className="space-y-0.5 border-l border-border/60 pl-3">
+                          {col.links.map((l) => (
+                            <li key={l.label}>
+                              <Link
+                                to={l.to}
+                                onClick={() => setMobileOpen(false)}
+                                className="flex items-center gap-2 py-2 text-sm text-foreground/75 hover:text-foreground hover:translate-x-1 transition-all duration-200"
+                              >
+                                {l.label}
+                                {l.tag && (
+                                  <span
+                                    className={cn(
+                                      "rounded-full px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-[0.18em]",
+                                      l.tag === "new" ? "bg-foreground text-background" : "bg-accent/15 text-accent",
+                                    )}
+                                  >
+                                    {l.tag}
+                                  </span>
+                                )}
+                              </Link>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </nav>
+        <div className="px-5 py-4 border-t border-border space-y-2">
+          <Link to="/wishlist" onClick={() => setMobileOpen(false)} className="flex items-center gap-2 text-sm text-foreground/75 hover:text-foreground">
+            <Heart className="h-4 w-4" /> Wishlist {wishCount > 0 && `(${wishCount})`}
+          </Link>
+          <Link to="/admin" onClick={() => setMobileOpen(false)} className="flex items-center gap-2 text-sm text-foreground/75 hover:text-foreground">
+            <User className="h-4 w-4" /> Admin
+          </Link>
+          <p className="pt-2 text-[10px] text-muted-foreground tracking-wide">Made in Cambodia · Natural fibers</p>
+        </div>
+      </aside>
     </>
   );
 };
