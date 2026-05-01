@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
-import { Heart, Menu, Search, ShoppingBag, User, X, ChevronDown, ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, ChevronDown, Heart, Menu, Search, ShoppingBag, User, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/context/CartContext";
 import { useWishlist } from "@/context/WishlistContext";
@@ -20,38 +20,21 @@ const Header = () => {
   const [mobileExpanded, setMobileExpanded] = useState<string | null>(null);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const navRef = useRef<HTMLElement>(null);
-  const itemRefs = useRef<Record<string, HTMLDivElement | null>>({});
-  const [indicator, setIndicator] = useState<{ left: number; width: number; visible: boolean }>({ left: 0, width: 0, visible: false });
 
-  // Determine which top menu the current route belongs to (for "active" highlight when no hover)
+  // Determine the active top menu based on the current route/query
   const routeActiveId = (() => {
     const params = new URLSearchParams(location.search);
     const cat = params.get("cat");
     const collection = params.get("collection");
     const q = params.get("q");
     if (location.pathname !== "/shop") return null;
+    if (q === "sale") return "sale";
     if (cat === "new") return "new";
     if (cat === "men") return "men";
     if (cat === "women") return "women";
-    if (q === "sale") return "sale";
     if (collection) return "collections";
     return "clothing";
   })();
-
-  // Move the sliding indicator under hovered or route-active item
-  useEffect(() => {
-    const targetId = activeMenu ?? routeActiveId;
-    if (!targetId || !navRef.current) {
-      setIndicator((s) => ({ ...s, visible: false }));
-      return;
-    }
-    const el = itemRefs.current[targetId];
-    if (!el) return;
-    const navRect = navRef.current.getBoundingClientRect();
-    const rect = el.getBoundingClientRect();
-    setIndicator({ left: rect.left - navRect.left + 12, width: rect.width - 24, visible: true });
-  }, [activeMenu, routeActiveId, location.pathname, location.search]);
 
   // Close all panels on route change
   useEffect(() => {
@@ -60,7 +43,7 @@ const Header = () => {
     setSearchOpen(false);
   }, [location.pathname, location.search]);
 
-  // Body scroll lock for drawers
+  // Body scroll lock for drawers / open mega-menu
   useEffect(() => {
     const lock = mobileOpen || activeMenu !== null;
     document.body.style.overflow = lock ? "hidden" : "";
@@ -90,7 +73,7 @@ const Header = () => {
   };
   const leaveMenu = () => {
     if (closeTimer.current) clearTimeout(closeTimer.current);
-    closeTimer.current = setTimeout(() => setActiveMenu(null), 150);
+    closeTimer.current = setTimeout(() => setActiveMenu(null), 140);
   };
 
   const submitSearch = (e: React.FormEvent) => {
@@ -119,7 +102,6 @@ const Header = () => {
       <header className="sticky top-0 z-header w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
         {/* Top bar */}
         <div className="container-page flex h-14 items-center justify-between gap-4 lg:h-16">
-          {/* Mobile menu */}
           <button
             type="button"
             aria-label="Open menu"
@@ -129,68 +111,68 @@ const Header = () => {
             <Menu className="h-5 w-5" />
           </button>
 
-          {/* Logo (mobile = center, desktop = left) */}
           <div className="flex-1 flex justify-center lg:flex-none lg:justify-start">
             <Logo />
           </div>
 
           {/* Desktop nav */}
           <nav
-            ref={navRef}
-            className="hidden lg:flex items-center gap-1"
+            className="hidden lg:flex items-center"
             aria-label="Primary"
             onMouseLeave={leaveMenu}
           >
             {megaMenus.map((m) => {
               const isHover = activeMenu === m.id;
               const isRouteActive = routeActiveId === m.id;
+              const isActive = isHover || isRouteActive;
               return (
                 <div
                   key={m.id}
-                  ref={(el) => (itemRefs.current[m.id] = el)}
                   className="relative"
                   onMouseEnter={() => enterMenu(m.id)}
+                  onFocus={() => enterMenu(m.id)}
                 >
                   <Link
                     to={m.to}
-                    className={cn(
-                      "group inline-flex items-center gap-1 px-3 py-2 text-[12px] font-medium uppercase tracking-[0.18em] transition-colors duration-200",
-                      m.accent
-                        ? "text-accent hover:text-accent"
-                        : isHover || isRouteActive
-                        ? "text-foreground"
-                        : "text-foreground/60 hover:text-foreground",
-                    )}
                     onClick={() => setActiveMenu(null)}
                     aria-current={isRouteActive ? "page" : undefined}
+                    className={cn(
+                      "group relative inline-flex items-center gap-1.5 px-4 py-2 text-[12px] font-medium uppercase tracking-[0.2em] transition-colors duration-200",
+                      m.accent
+                        ? "text-accent"
+                        : isActive
+                        ? "text-foreground"
+                        : "text-foreground/65 hover:text-foreground",
+                    )}
                   >
-                    <span>{m.label}</span>
+                    <span className="relative">
+                      {m.label}
+                      {/* refined underline: thin, animated */}
+                      <span
+                        aria-hidden="true"
+                        className={cn(
+                          "pointer-events-none absolute -bottom-1 left-0 h-px w-full origin-center bg-current transition-transform duration-300 ease-out",
+                          isActive ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100",
+                        )}
+                      />
+                    </span>
                     {m.columns.length > 0 && (
                       <ChevronDown
                         className={cn(
-                          "h-3 w-3 opacity-0 -translate-y-0.5 transition-all duration-200",
-                          (isHover || isRouteActive) && "opacity-60 translate-y-0",
-                          isHover && "rotate-180",
+                          "h-3 w-3 transition-all duration-300 ease-out",
+                          isHover ? "rotate-180 opacity-90" : "opacity-50",
                         )}
                         aria-hidden="true"
                       />
+                    )}
+                    {/* Active route dot */}
+                    {isRouteActive && !isHover && (
+                      <span aria-hidden="true" className="absolute left-1/2 -translate-x-1/2 -bottom-2 h-1 w-1 rounded-full bg-current" />
                     )}
                   </Link>
                 </div>
               );
             })}
-            {/* Sliding indicator */}
-            <span
-              aria-hidden="true"
-              className={cn(
-                "pointer-events-none absolute -bottom-[1px] h-[2px] bg-foreground transition-all duration-300 ease-out",
-                indicator.visible ? "opacity-100" : "opacity-0",
-              )}
-              style={{
-                left: indicator.left,
-                width: indicator.width,
-              }}
-            />
           </nav>
 
           {/* Right icons */}
@@ -225,7 +207,9 @@ const Header = () => {
         {/* Mega-menu panel (desktop) */}
         <div
           className={cn(
-            "absolute left-0 right-0 top-full hidden lg:block border-b border-border bg-background shadow-[0_24px_48px_-24px_hsl(var(--foreground)/0.18)] transition-all duration-300 ease-out origin-top",
+            "absolute left-0 right-0 top-full hidden lg:block border-b border-border bg-background origin-top",
+            "transition-[opacity,transform,visibility] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]",
+            "shadow-[0_24px_48px_-24px_hsl(var(--foreground)/0.18)]",
             activeMenu ? "opacity-100 visible translate-y-0" : "opacity-0 invisible -translate-y-2 pointer-events-none",
           )}
           onMouseEnter={() => activeMenu && enterMenu(activeMenu)}
@@ -234,8 +218,8 @@ const Header = () => {
           {megaMenus.map((m) => {
             if (m.id !== activeMenu) return null;
             return (
-              <div key={m.id} className="container-page py-10 animate-fade-in">
-                <div className={cn("grid gap-12", m.feature ? "lg:grid-cols-[1fr_300px]" : "grid-cols-1")}>
+              <div key={m.id} className="container-page py-10">
+                <div className={cn("grid gap-12", m.feature ? "lg:grid-cols-[1fr_320px]" : "grid-cols-1")}>
                   <div
                     className="grid gap-x-10 gap-y-8"
                     style={{ gridTemplateColumns: `repeat(${Math.min(m.columns.length, 4)}, minmax(0, 1fr))` }}
@@ -243,28 +227,38 @@ const Header = () => {
                     {m.columns.map((col, idx) => (
                       <div
                         key={col.heading}
-                        className="animate-fade-in"
-                        style={{ animationDelay: `${idx * 60}ms`, animationFillMode: "backwards" }}
+                        className="animate-fade-up"
+                        style={{ animationDelay: `${idx * 70}ms`, animationFillMode: "backwards" }}
                       >
                         <div className="flex items-center gap-2 mb-5">
-                          <span className="h-px w-4 bg-foreground/40" />
-                          <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+                          <span className="h-px w-5 bg-foreground/40" />
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-muted-foreground">
                             {col.heading}
                           </p>
                         </div>
-                        <ul className="space-y-1">
+                        <ul className="space-y-0.5">
                           {col.links.map((l) => (
                             <li key={l.label}>
                               <Link
                                 to={l.to}
-                                className="group flex items-center gap-2 py-1.5 text-[13.5px] text-foreground/75 hover:text-foreground transition-colors"
+                                className="group flex items-center gap-2 py-2 text-[13.5px] text-foreground/75 hover:text-foreground transition-colors"
                                 onClick={() => setActiveMenu(null)}
                               >
                                 <span className="relative">
                                   {l.label}
-                                  <span className="absolute left-0 -bottom-0.5 h-px w-full origin-left scale-x-0 bg-foreground transition-transform duration-300 group-hover:scale-x-100" />
+                                  <span className="absolute left-0 -bottom-0.5 h-px w-full origin-left scale-x-0 bg-foreground transition-transform duration-300 ease-out group-hover:scale-x-100" />
                                 </span>
-                                <ArrowUpRight className="h-3 w-3 opacity-0 -translate-x-1 transition-all duration-200 group-hover:opacity-60 group-hover:translate-x-0" />
+                                {l.tag && (
+                                  <span
+                                    className={cn(
+                                      "rounded-full px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-[0.18em]",
+                                      l.tag === "new" ? "bg-foreground text-background" : "bg-accent/15 text-accent",
+                                    )}
+                                  >
+                                    {l.tag}
+                                  </span>
+                                )}
+                                <ArrowUpRight className="h-3 w-3 opacity-0 -translate-x-1 transition-all duration-300 ease-out group-hover:opacity-60 group-hover:translate-x-0" />
                               </Link>
                             </li>
                           ))}
@@ -272,24 +266,33 @@ const Header = () => {
                       </div>
                     ))}
                   </div>
+
                   {m.feature && (
                     <Link
                       to={m.feature.to}
-                      className="group relative block overflow-hidden rounded-sm bg-secondary aspect-[4/5] animate-fade-in"
-                      style={{ animationDelay: "180ms", animationFillMode: "backwards" }}
                       onClick={() => setActiveMenu(null)}
+                      className="group relative block overflow-hidden rounded-sm bg-secondary aspect-[4/5] animate-fade-up"
+                      style={{ animationDelay: "200ms", animationFillMode: "backwards" }}
                     >
-                      <div className="absolute inset-0 bg-gradient-to-br from-accent/30 via-foreground/20 to-foreground/60 transition-transform duration-700 group-hover:scale-105" />
+                      <img
+                        src={m.feature.image}
+                        alt={m.feature.title}
+                        loading="lazy"
+                        width={800}
+                        height={1024}
+                        className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-foreground/75 via-foreground/20 to-transparent" />
                       <div className="absolute inset-0 p-6 flex flex-col justify-end text-background">
-                        <span className="inline-flex items-center gap-1.5 self-start rounded-full bg-background/15 backdrop-blur-sm px-2.5 py-1 text-[9px] uppercase tracking-[0.25em]">
+                        <span className="inline-flex items-center gap-1.5 self-start rounded-full bg-background/15 backdrop-blur-sm px-2.5 py-1 text-[9px] uppercase tracking-[0.28em]">
                           <span className="h-1 w-1 rounded-full bg-background animate-pulse" />
                           Featured
                         </span>
                         <h4 className="mt-3 font-serif text-2xl leading-tight">{m.feature.title}</h4>
                         <p className="mt-1.5 text-xs opacity-90 leading-relaxed">{m.feature.copy}</p>
-                        <p className="mt-4 inline-flex items-center gap-1 text-[11px] uppercase tracking-[0.2em] font-medium">
+                        <p className="mt-4 inline-flex items-center gap-1 text-[11px] uppercase tracking-[0.22em] font-medium">
                           {m.feature.cta}
-                          <ArrowUpRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                          <ArrowUpRight className="h-3.5 w-3.5 transition-transform duration-300 ease-out group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                         </p>
                       </div>
                     </Link>
@@ -333,7 +336,7 @@ const Header = () => {
       <aside
         className={cn(
           "fixed left-0 top-0 z-drawer h-full w-[85%] max-w-[340px] bg-background flex flex-col lg:hidden shadow-card",
-          "transition-transform duration-300 ease-out",
+          "transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]",
           mobileOpen ? "translate-x-0" : "-translate-x-full",
         )}
         aria-label="Mobile navigation"
@@ -348,22 +351,23 @@ const Header = () => {
         <nav className="flex-1 overflow-y-auto px-5 py-2">
           {megaMenus.map((m) => {
             const open = mobileExpanded === m.id;
+            const isRouteActive = routeActiveId === m.id;
             return (
               <div key={m.id} className="border-b border-border last:border-b-0">
                 <button
                   type="button"
                   onClick={() => setMobileExpanded(open ? null : m.id)}
                   className={cn(
-                    "flex items-center justify-between w-full py-4 text-sm font-medium uppercase tracking-[0.18em] transition-colors",
-                    m.accent ? "text-accent" : open ? "text-foreground" : "text-foreground/80 hover:text-foreground",
+                    "flex items-center justify-between w-full py-4 text-sm font-medium uppercase tracking-[0.2em] transition-colors",
+                    m.accent ? "text-accent" : open || isRouteActive ? "text-foreground" : "text-foreground/80 hover:text-foreground",
                   )}
                   aria-expanded={open}
                 >
                   <span className="flex items-center gap-3">
                     <span
                       className={cn(
-                        "h-1 w-1 rounded-full bg-current transition-all duration-300",
-                        open ? "opacity-100 scale-100" : "opacity-0 scale-50",
+                        "h-1.5 w-1.5 rounded-full bg-current transition-all duration-300",
+                        open || isRouteActive ? "opacity-100 scale-100" : "opacity-0 scale-50",
                       )}
                     />
                     {m.label}
@@ -374,16 +378,26 @@ const Header = () => {
                   <div className="pb-5 pl-4 space-y-4 animate-accordion-down">
                     {m.columns.map((col) => (
                       <div key={col.heading}>
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-muted-foreground mb-2">{col.heading}</p>
-                        <ul className="space-y-1 border-l border-border/60 pl-3">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-muted-foreground mb-2">{col.heading}</p>
+                        <ul className="space-y-0.5 border-l border-border/60 pl-3">
                           {col.links.map((l) => (
                             <li key={l.label}>
                               <Link
                                 to={l.to}
                                 onClick={() => setMobileOpen(false)}
-                                className="block py-1.5 text-sm text-foreground/75 hover:text-foreground hover:translate-x-1 transition-all duration-200"
+                                className="flex items-center gap-2 py-2 text-sm text-foreground/75 hover:text-foreground hover:translate-x-1 transition-all duration-200"
                               >
                                 {l.label}
+                                {l.tag && (
+                                  <span
+                                    className={cn(
+                                      "rounded-full px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-[0.18em]",
+                                      l.tag === "new" ? "bg-foreground text-background" : "bg-accent/15 text-accent",
+                                    )}
+                                  >
+                                    {l.tag}
+                                  </span>
+                                )}
                               </Link>
                             </li>
                           ))}

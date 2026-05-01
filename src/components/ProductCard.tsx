@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Eye, Heart } from "lucide-react";
+import { Eye, GitCompareArrows, Heart } from "lucide-react";
 import { Product } from "@/data/products";
 import { useWishlist } from "@/context/WishlistContext";
+import { useCompare } from "@/context/CompareContext";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -12,8 +13,10 @@ type Props = {
 
 const ProductCard = ({ product, onQuickView }: Props) => {
   const { has, toggle } = useWishlist();
+  const { has: inCompare, toggle: toggleCompare } = useCompare();
   const [activeColor, setActiveColor] = useState(product.colors[0]?.name);
   const liked = has(product.id);
+  const comparing = inCompare(product.id);
 
   return (
     <article className="group block animate-fade-up">
@@ -42,15 +45,29 @@ const ProductCard = ({ product, onQuickView }: Props) => {
           </span>
         )}
 
-        {/* Wishlist */}
-        <button
-          type="button"
-          onClick={(e) => { e.preventDefault(); toggle(product.id); }}
-          aria-label={liked ? "Remove from wishlist" : "Add to wishlist"}
-          className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-background/95 text-foreground/70 hover:text-accent transition-colors shadow-soft"
-        >
-          <Heart className={cn("h-4 w-4 transition-all", liked && "fill-accent text-accent")} />
-        </button>
+        {/* Quick actions */}
+        <div className="absolute right-3 top-3 flex flex-col gap-2">
+          <button
+            type="button"
+            onClick={(e) => { e.preventDefault(); toggle(product.id); }}
+            aria-label={liked ? "Remove from wishlist" : "Add to wishlist"}
+            className="grid h-9 w-9 place-items-center rounded-full bg-background/95 text-foreground/70 hover:text-accent transition-all shadow-soft hover:scale-110"
+          >
+            <Heart className={cn("h-4 w-4 transition-all", liked && "fill-accent text-accent")} />
+          </button>
+          <button
+            type="button"
+            onClick={(e) => { e.preventDefault(); toggleCompare(product.id); }}
+            aria-label={comparing ? "Remove from compare" : "Add to compare"}
+            aria-pressed={comparing}
+            className={cn(
+              "grid h-9 w-9 place-items-center rounded-full transition-all shadow-soft hover:scale-110 opacity-0 -translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 duration-300",
+              comparing ? "bg-foreground text-background" : "bg-background/95 text-foreground/70 hover:text-foreground",
+            )}
+          >
+            <GitCompareArrows className="h-4 w-4" />
+          </button>
+        </div>
 
         {/* Quick view */}
         {onQuickView && (
