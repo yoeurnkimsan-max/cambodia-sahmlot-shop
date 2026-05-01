@@ -8,6 +8,7 @@ import { useProducts } from "@/hooks/useProducts";
 import ProductCard from "@/components/ProductCard";
 import HeroSection from "@/components/HeroSection";
 import QuickViewModal from "@/components/QuickViewModal";
+import RecentlyViewed from "@/components/RecentlyViewed";
 import { Button } from "@/components/ui/button";
 import { Product } from "@/data/products";
 
@@ -138,6 +139,7 @@ const Home = () => {
         </div>
       </section>
       <QuickViewModal product={quickView} onClose={() => setQuickView(null)} />
+      <RecentlyViewed />
     </>
   );
 };
