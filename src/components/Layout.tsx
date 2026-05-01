@@ -4,6 +4,8 @@ import AnnouncementBar from "./AnnouncementBar";
 import Header from "./Header";
 import Footer from "./Footer";
 import CartDrawer from "./CartDrawer";
+import CompareBar from "./CompareBar";
+import CompareModal from "./CompareModal";
 
 const Layout = () => {
   const { pathname } = useLocation();
@@ -20,6 +22,8 @@ const Layout = () => {
       </main>
       <Footer />
       <CartDrawer />
+      <CompareBar />
+      <CompareModal />
     </div>
   );
 };

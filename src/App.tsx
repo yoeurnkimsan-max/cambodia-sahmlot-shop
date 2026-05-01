@@ -14,13 +14,15 @@ import Wishlist from "./pages/Wishlist";
 import NotFound from "./pages/NotFound.tsx";
 import { CartProvider } from "@/context/CartContext";
 import { WishlistProvider } from "@/context/WishlistContext";
+import { CompareProvider } from "@/context/CompareContext";
+import { RecentlyViewedProvider } from "@/context/RecentlyViewedContext";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <WishlistProvider><CartProvider>
+      <WishlistProvider><CompareProvider><RecentlyViewedProvider><CartProvider>
         <Toaster />
         <Sonner />
         <BrowserRouter>
@@ -37,7 +39,7 @@ const App = () => (
             </Route>
           </Routes>
         </BrowserRouter>
-      </CartProvider></WishlistProvider>
+      </CartProvider></RecentlyViewedProvider></CompareProvider></WishlistProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
