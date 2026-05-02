@@ -5,15 +5,9 @@ import { useProducts } from "@/hooks/useProducts";
 import ProductCard from "@/components/ProductCard";
 import QuickViewModal from "@/components/QuickViewModal";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, SlidersHorizontal, X } from "lucide-react";
+import { SlidersHorizontal, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-const sortOptions = [
-  { value: "featured", label: "Featured" },
-  { value: "price-asc", label: "Price: Low to High" },
-  { value: "price-desc", label: "Price: High to Low" },
-  { value: "name", label: "Alphabetical" },
-];
+import FilterDrawer, { FilterState, defaultFilters } from "@/components/FilterDrawer";
 
 const allCats: { value: Category | "all"; label: string }[] = [
   { value: "all", label: "All" },
@@ -26,13 +20,54 @@ const allCats: { value: Category | "all"; label: string }[] = [
 const Shop = () => {
   const products = useProducts();
   const [params, setParams] = useSearchParams();
-  const [sort, setSort] = useState("featured");
-  const [filtersOpen, setFiltersOpen] = useState(false);
   const [quickView, setQuickView] = useState<Product | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const cat = (params.get("cat") as Category | null) || "all";
   const q = params.get("q")?.toLowerCase().trim() || "";
   const collection = params.get("collection")?.toLowerCase() || "";
+
+  // Build facets from full catalog so options stay stable.
+  const facets = useMemo(() => {
+    const sizesSet = new Set<string>();
+    const colorsMap = new Map<string, string>();
+    const badgesSet = new Set<string>();
+    let priceMin = Infinity;
+    let priceMax = 0;
+    products.forEach((p) => {
+      p.sizes.forEach((s) => sizesSet.add(s));
+      p.colors.forEach((c) => colorsMap.set(c.name, c.hex));
+      if (p.badge) badgesSet.add(p.badge);
+      priceMin = Math.min(priceMin, Math.floor(p.price));
+      priceMax = Math.max(priceMax, Math.ceil(p.price));
+    });
+    if (!isFinite(priceMin)) priceMin = 0;
+    return {
+      priceMin,
+      priceMax,
+      sizes: Array.from(sizesSet),
+      colors: Array.from(colorsMap.entries()).map(([name, hex]) => ({ name, hex })),
+      categories: [
+        { value: "men", label: "Men" },
+        { value: "women", label: "Women" },
+        { value: "essentials", label: "Essentials" },
+        { value: "new", label: "New" },
+      ],
+      badges: Array.from(badgesSet),
+    };
+  }, [products]);
+
+  const [filters, setFilters] = useState<FilterState>(() => defaultFilters(100));
+
+  // Once products load, ensure price range matches catalog max.
+  useMemo(() => {
+    setFilters((f) =>
+      f.price[1] === 100 || f.price[1] < facets.priceMax
+        ? { ...f, price: [facets.priceMin, facets.priceMax] }
+        : f,
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [facets.priceMax, facets.priceMin]);
 
   const filtered = useMemo(() => {
     let list = products.slice();
@@ -48,13 +83,26 @@ const Shop = () => {
         return tokens.every((t) => hay.includes(t));
       });
     }
-    switch (sort) {
-      case "price-asc": list.sort((a, b) => a.price - b.price); break;
-      case "price-desc": list.sort((a, b) => b.price - a.price); break;
-      case "name": list.sort((a, b) => a.name.localeCompare(b.name)); break;
+    // Drawer filters
+    list = list.filter((p) => p.price >= filters.price[0] && p.price <= filters.price[1]);
+    if (filters.sizes.length) list = list.filter((p) => p.sizes.some((s) => filters.sizes.includes(s)));
+    if (filters.colors.length) list = list.filter((p) => p.colors.some((c) => filters.colors.includes(c.name)));
+    if (filters.categories.length)
+      list = list.filter((p) => p.categories.some((c) => filters.categories.includes(c)));
+    if (filters.badges.length) list = list.filter((p) => p.badge && filters.badges.includes(p.badge));
+
+    switch (filters.sort) {
+      case "price-low": list.sort((a, b) => a.price - b.price); break;
+      case "price-high": list.sort((a, b) => b.price - a.price); break;
+      case "discount-high":
+        list.sort((a, b) => discount(b) - discount(a)); break;
+      case "discount-low":
+        list.sort((a, b) => discount(a) - discount(b)); break;
+      case "new":
+        list.sort((a, b) => Number(b.badge === "New") - Number(a.badge === "New")); break;
     }
     return list;
-  }, [cat, q, collection, sort, products]);
+  }, [cat, q, collection, filters, products]);
 
   const setCat = (value: string) => {
     const next = new URLSearchParams(params);
@@ -67,6 +115,14 @@ const Shop = () => {
     next.delete(key);
     setParams(next, { replace: true });
   };
+
+  const activeFilterCount =
+    (filters.sort !== "recommend" ? 1 : 0) +
+    (filters.price[0] !== facets.priceMin || filters.price[1] !== facets.priceMax ? 1 : 0) +
+    filters.sizes.length +
+    filters.colors.length +
+    filters.categories.length +
+    filters.badges.length;
 
   const collectionLabel = collection ? collections.find((c) => c.slug === collection)?.name : null;
   const heading = cat !== "all" ? categoryMeta[cat as Category]?.label : collectionLabel || "All Products";
@@ -120,50 +176,49 @@ const Shop = () => {
               </button>
             ))}
           </div>
-          <button
-            className="md:hidden inline-flex items-center gap-2 text-sm font-medium"
-            onClick={() => setFiltersOpen((o) => !o)}
-          >
-            <SlidersHorizontal className="h-4 w-4" /> Filters
-          </button>
-
-          <div className="flex items-center gap-3 text-sm">
-            <span className="text-muted-foreground">{filtered.length} items</span>
-            <div className="relative">
-              <select
-                value={sort}
-                onChange={(e) => setSort(e.target.value)}
-                className="appearance-none border border-border bg-background py-2 pl-3 pr-8 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-ring"
-              >
-                {sortOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </select>
-              <ChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4" />
-            </div>
+          <div className="flex items-center gap-3 text-sm ml-auto">
+            <span className="text-muted-foreground tabular-nums">{filtered.length} Items</span>
+            <button
+              onClick={() => setDrawerOpen(true)}
+              className="group relative inline-flex items-center gap-2 px-5 py-2.5 border border-foreground bg-background text-foreground text-xs uppercase tracking-[0.2em] font-medium hover:bg-foreground hover:text-background transition-all duration-300"
+            >
+              <SlidersHorizontal className="h-3.5 w-3.5" />
+              Filter
+              {activeFilterCount > 0 && (
+                <span className="ml-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-accent text-accent-foreground text-[10px] font-bold px-1.5 group-hover:bg-background group-hover:text-foreground transition-colors">
+                  {activeFilterCount}
+                </span>
+              )}
+            </button>
           </div>
         </div>
 
-        {filtersOpen && (
-          <div className="md:hidden flex flex-wrap gap-2 py-4 border-b border-border">
-            {allCats.map((c) => (
-              <button
-                key={c.value}
-                onClick={() => { setCat(c.value); setFiltersOpen(false); }}
-                className={cn(
-                  "px-4 py-2 text-sm rounded-full border",
-                  cat === c.value ? "bg-foreground text-background border-foreground" : "border-border",
-                )}
-              >
-                {c.label}
-              </button>
-            ))}
-          </div>
-        )}
+        {/* Mobile category strip */}
+        <div className="md:hidden flex gap-2 py-4 overflow-x-auto -mx-4 px-4 border-b border-border">
+          {allCats.map((c) => (
+            <button
+              key={c.value}
+              onClick={() => setCat(c.value)}
+              className={cn(
+                "shrink-0 px-4 py-1.5 text-xs uppercase tracking-wider rounded-full border transition-all",
+                cat === c.value ? "bg-foreground text-background border-foreground" : "border-border",
+              )}
+            >
+              {c.label}
+            </button>
+          ))}
+        </div>
 
         {filtered.length === 0 ? (
           <div className="py-24 text-center">
             <h2 className="font-serif text-2xl">Nothing matches yet</h2>
             <p className="mt-2 text-muted-foreground">Try a different filter or clear your search.</p>
-            <Button onClick={() => setParams({}, { replace: true })} className="mt-6 rounded-none">Reset filters</Button>
+            <Button
+              onClick={() => { setParams({}, { replace: true }); setFilters(defaultFilters(facets.priceMax)); }}
+              className="mt-6 rounded-none"
+            >
+              Reset filters
+            </Button>
           </div>
         ) : (
           <div className="mt-8 grid gap-x-4 gap-y-10 grid-cols-2 lg:grid-cols-4">
@@ -175,8 +230,20 @@ const Shop = () => {
       </section>
 
       <QuickViewModal product={quickView} onClose={() => setQuickView(null)} />
+
+      <FilterDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        value={filters}
+        onApply={setFilters}
+        facets={facets}
+        resultCount={filtered.length}
+      />
     </>
   );
 };
+
+const discount = (p: Product) =>
+  p.compareAt && p.compareAt > p.price ? (p.compareAt - p.price) / p.compareAt : 0;
 
 export default Shop;
