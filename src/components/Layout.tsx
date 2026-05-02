@@ -1,4 +1,4 @@
-import { Outlet, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { useEffect } from "react";
 import AnnouncementBar from "./AnnouncementBar";
 import Header from "./Header";
@@ -6,6 +6,7 @@ import Footer from "./Footer";
 import CartDrawer from "./CartDrawer";
 import CompareBar from "./CompareBar";
 import CompareModal from "./CompareModal";
+import PageTransition from "./PageTransition";
 
 const Layout = () => {
   const { pathname } = useLocation();
@@ -18,7 +19,7 @@ const Layout = () => {
       <AnnouncementBar />
       <Header />
       <main className="flex-1">
-        <Outlet />
+        <PageTransition />
       </main>
       <Footer />
       <CartDrawer />
