@@ -34,6 +34,7 @@ const Shop = () => {
   const cat = (params.get("cat") as Category | null) || "all";
   const q = params.get("q")?.toLowerCase().trim() || "";
   const collection = params.get("collection")?.toLowerCase() || "";
+  const sortParam = params.get("sort") || "";
 
   // Build facets from full catalog so options stay stable.
   const facets = useMemo(() => {
@@ -69,6 +70,14 @@ const Shop = () => {
   }, [products]);
 
   const [filters, setFilters] = useState<FilterState>(() => defaultFilters(100));
+
+  // Sync sort from URL when present
+  useEffect(() => {
+    if (sortParam && sortParam !== filters.sort) {
+      setFilters((f) => ({ ...f, sort: sortParam }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sortParam]);
 
   // Once products load, ensure price range matches catalog max.
   useMemo(() => {
