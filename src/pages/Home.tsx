@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { ReactNode, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowRight, Flame, Leaf, Package, RotateCcw, Shield, Sparkles, Star, TrendingUp } from "lucide-react";
@@ -21,7 +21,7 @@ const SectionHeader = ({
   title,
   href,
   cta = "View all",
-}: { eyebrow: string; title: string; href?: string; cta?: string }) => (
+}: { eyebrow: ReactNode; title: string; href?: string; cta?: string }) => (
   <div className="mb-10 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
     <MotionInView>
       <p className="text-[11px] uppercase tracking-[0.28em] text-muted-foreground">{eyebrow}</p>
