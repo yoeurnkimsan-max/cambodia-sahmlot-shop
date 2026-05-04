@@ -26,6 +26,8 @@ export const defaultFilters = (priceMax: number): FilterState => ({
 const sortOptions = [
   { value: "recommend", label: "Recommended" },
   { value: "new", label: "Newest" },
+  { value: "popular", label: "Most Popular" },
+  { value: "rating", label: "Top Rated" },
   { value: "discount-high", label: "Discount: High to Low" },
   { value: "discount-low", label: "Discount: Low to High" },
   { value: "price-high", label: "Price: High to Low" },
