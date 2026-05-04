@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Eye, GitCompareArrows, Heart } from "lucide-react";
+import { Eye, GitCompareArrows, Heart, Star } from "lucide-react";
 import { Product } from "@/data/products";
 import { useWishlist } from "@/context/WishlistContext";
 import { useCompare } from "@/context/CompareContext";
@@ -10,9 +10,10 @@ import { cn } from "@/lib/utils";
 type Props = {
   product: Product;
   onQuickView?: (product: Product) => void;
+  view?: "grid" | "list";
 };
 
-const ProductCard = ({ product, onQuickView }: Props) => {
+const ProductCard = ({ product, onQuickView, view = "grid" }: Props) => {
   const { has, toggle } = useWishlist();
   const { has: inCompare, toggle: toggleCompare } = useCompare();
   const [activeColor, setActiveColor] = useState(product.colors[0]?.name);
@@ -22,6 +23,56 @@ const ProductCard = ({ product, onQuickView }: Props) => {
   const discountPct = product.compareAt
     ? Math.round(((product.compareAt - product.price) / product.compareAt) * 100)
     : 0;
+
+  const lowStock = typeof product.stock === "number" && product.stock > 0 && product.stock <= 10;
+  const soldOut = product.stock === 0;
+
+  if (view === "list") {
+    return (
+      <article className="group flex gap-5 border-b border-border pb-6 last:border-b-0">
+        <Link to={`/product/${product.slug}`} className="relative block w-40 sm:w-56 shrink-0 overflow-hidden rounded-xl bg-secondary aspect-[4/5]">
+          <img src={product.image} alt={product.name} loading="lazy" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.04]" />
+          {discountPct > 0 && (
+            <span className="absolute left-2 top-2 rounded-full bg-foreground text-background px-2 py-0.5 text-[10px] font-semibold tracking-wide">-{discountPct}%</span>
+          )}
+        </Link>
+        <div className="flex-1 min-w-0 flex flex-col">
+          <p className="text-[10.5px] uppercase tracking-[0.2em] text-muted-foreground">{product.collection}</p>
+          <h3 className="mt-1 font-serif text-lg sm:text-xl tracking-tight">
+            <Link to={`/product/${product.slug}`} className="hover:opacity-70 transition-opacity">{product.name}</Link>
+          </h3>
+          {product.rating != null && (
+            <div className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Star className="h-3.5 w-3.5 fill-foreground text-foreground" />
+              <span className="font-medium text-foreground tabular-nums">{product.rating.toFixed(1)}</span>
+              <span>({product.reviewCount})</span>
+            </div>
+          )}
+          <p className="mt-2 text-sm text-muted-foreground line-clamp-2 max-w-prose">{product.description}</p>
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            {product.compareAt ? (
+              <>
+                <span className="text-base font-semibold tabular-nums text-destructive">${product.price.toFixed(2)}</span>
+                <span className="text-xs text-muted-foreground line-through tabular-nums">${product.compareAt.toFixed(2)}</span>
+              </>
+            ) : (
+              <span className="text-base font-semibold tabular-nums">${product.price.toFixed(2)}</span>
+            )}
+            {lowStock && <span className="text-[10px] uppercase tracking-[0.18em] text-destructive font-semibold">Only {product.stock} left</span>}
+            {soldOut && <span className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground font-semibold">Sold out</span>}
+          </div>
+          <div className="mt-auto pt-4 flex items-center gap-2">
+            {onQuickView && (
+              <button onClick={() => onQuickView(product)} className="text-[11px] uppercase tracking-[0.18em] font-semibold underline underline-offset-4 hover:opacity-70">Quick view</button>
+            )}
+            <button onClick={() => toggle(product.id)} className={cn("ml-auto grid h-9 w-9 place-items-center rounded-full border", liked ? "bg-foreground text-background border-foreground" : "border-border hover:border-foreground")}>
+              <Heart className={cn("h-4 w-4", liked && "fill-current")} />
+            </button>
+          </div>
+        </div>
+      </article>
+    );
+  }
 
   return (
     <article className="group block">
@@ -57,6 +108,16 @@ const ProductCard = ({ product, onQuickView }: Props) => {
           {discountPct > 0 && (
             <span className="px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] rounded-full bg-foreground text-background">
               -{discountPct}%
+            </span>
+          )}
+          {lowStock && (
+            <span className="px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] rounded-full bg-destructive/10 text-destructive border border-destructive/20">
+              Only {product.stock} left
+            </span>
+          )}
+          {soldOut && (
+            <span className="px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] rounded-full bg-muted text-muted-foreground">
+              Sold out
             </span>
           )}
         </div>
@@ -105,6 +166,13 @@ const ProductCard = ({ product, onQuickView }: Props) => {
           <h3 className="mt-1 truncate font-serif text-[15px] font-medium tracking-tight">
             <Link to={`/product/${product.slug}`} className="hover:opacity-70 transition-opacity">{product.name}</Link>
           </h3>
+          {product.rating != null && (
+            <div className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
+              <Star className="h-3 w-3 fill-foreground text-foreground" />
+              <span className="text-foreground font-medium tabular-nums">{product.rating.toFixed(1)}</span>
+              <span className="opacity-70">({product.reviewCount})</span>
+            </div>
+          )}
           <div className="mt-2.5 flex gap-1.5">
             {product.colors.slice(0, 5).map((c) => (
               <button
