@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight, Leaf, Package, RotateCcw, Shield, Sparkles, Star } from "lucide-react";
+import { ArrowRight, Flame, Leaf, Package, RotateCcw, Shield, Sparkles, Star, TrendingUp } from "lucide-react";
 import categoryWomen from "@/assets/category-women.jpg";
 import categoryMen from "@/assets/category-men.jpg";
 import categoryEssentials from "@/assets/category-essentials.jpg";
@@ -44,8 +44,30 @@ const SectionHeader = ({
 const Home = () => {
   const products = useProducts();
   const [quickView, setQuickView] = useState<Product | null>(null);
-  const featured = products.slice(0, 4);
-  const newIn = products.filter((p) => p.categories.includes("new")).slice(0, 8);
+  const featured = useMemo(
+    () => [...products].sort((a, b) => (b.reviewCount ?? 0) - (a.reviewCount ?? 0)).slice(0, 8),
+    [products],
+  );
+  const newIn = useMemo(
+    () => products.filter((p) => p.categories.includes("new")).slice(0, 8),
+    [products],
+  );
+  const topRated = useMemo(
+    () => [...products].sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0)).slice(0, 4),
+    [products],
+  );
+  const onSale = useMemo(
+    () => products.filter((p) => p.compareAt && p.compareAt > p.price).slice(0, 4),
+    [products],
+  );
+  const counts = useMemo(() => ({
+    men: products.filter((p) => p.categories.includes("men")).length,
+    women: products.filter((p) => p.categories.includes("women")).length,
+    essentials: products.filter((p) => p.categories.includes("essentials")).length,
+    accessories: products.filter((p) => p.categories.includes("accessories")).length,
+    outerwear: products.filter((p) => p.categories.includes("outerwear")).length,
+    bottoms: products.filter((p) => p.categories.includes("bottoms")).length,
+  }), [products]);
 
   return (
     <>
@@ -80,9 +102,9 @@ const Home = () => {
         <SectionHeader eyebrow="Shop by category" title="Find your fit" href="/shop" cta="All categories" />
         <div className="grid gap-4 sm:gap-6 md:grid-cols-3">
           {[
-            { img: categoryMen, label: "Men", href: "/shop?cat=men", count: "32 styles" },
-            { img: categoryWomen, label: "Women", href: "/shop?cat=women", count: "28 styles" },
-            { img: categoryEssentials, label: "Essentials", href: "/shop?cat=essentials", count: "18 styles" },
+            { img: categoryMen, label: "Men", href: "/shop?cat=men", count: `${counts.men} styles` },
+            { img: categoryWomen, label: "Women", href: "/shop?cat=women", count: `${counts.women} styles` },
+            { img: categoryEssentials, label: "Essentials", href: "/shop?cat=essentials", count: `${counts.essentials} styles` },
           ].map((c, i) => (
             <MotionInView key={c.label} delay={i * 0.08}>
               <Link
@@ -109,19 +131,76 @@ const Home = () => {
             </MotionInView>
           ))}
         </div>
+
+        {/* Sub-category pills */}
+        <div className="mt-8 flex flex-wrap justify-center gap-2">
+          {[
+            { label: "Outerwear", href: "/shop?cat=outerwear", count: counts.outerwear },
+            { label: "Bottoms", href: "/shop?cat=bottoms", count: counts.bottoms },
+            { label: "Accessories", href: "/shop?cat=accessories", count: counts.accessories },
+            { label: "Sale", href: "/shop?q=sale", count: onSale.length },
+          ].map((p) => (
+            <Link
+              key={p.label}
+              to={p.href}
+              className="group inline-flex items-center gap-2 rounded-full border border-border bg-background px-4 py-2 text-xs uppercase tracking-[0.18em] hover:border-foreground transition-colors"
+            >
+              {p.label}
+              <span className="rounded-full bg-secondary text-foreground/70 px-2 py-0.5 text-[10px] tabular-nums group-hover:bg-foreground group-hover:text-background transition-colors">{p.count}</span>
+            </Link>
+          ))}
+        </div>
       </section>
 
       {/* FEATURED */}
       <section className="container-page py-20 lg:py-28 border-t border-border">
-        <SectionHeader eyebrow="Bestsellers" title="Loved by everyone" href="/shop" />
+        <SectionHeader eyebrow="Bestsellers" title="Loved by everyone" href="/shop?sort=popular" />
         <div className="grid gap-x-4 gap-y-12 grid-cols-2 lg:grid-cols-4">
-          {featured.map((p, i) => (
+          {featured.slice(0, 4).map((p, i) => (
             <MotionInView key={p.id} delay={i * 0.06}>
               <ProductCard product={p} onQuickView={setQuickView} />
             </MotionInView>
           ))}
         </div>
       </section>
+
+      {/* TRENDING NOW */}
+      <section className="container-page py-20 lg:py-28 border-t border-border">
+        <SectionHeader
+          eyebrow={(<span className="inline-flex items-center gap-1.5"><TrendingUp className="h-3 w-3" /> Trending now</span>) as unknown as string}
+          title="What's moving fast"
+          href="/shop"
+          cta="Explore all"
+        />
+        <div className="grid gap-x-4 gap-y-12 grid-cols-2 lg:grid-cols-4">
+          {featured.slice(4, 8).map((p, i) => (
+            <MotionInView key={p.id} delay={i * 0.06}>
+              <ProductCard product={p} onQuickView={setQuickView} />
+            </MotionInView>
+          ))}
+        </div>
+      </section>
+
+      {/* ON SALE rail */}
+      {onSale.length > 0 && (
+        <section className="bg-destructive/[0.04] py-20 lg:py-28 border-y border-border">
+          <div className="container-page">
+            <SectionHeader
+              eyebrow={(<span className="inline-flex items-center gap-1.5 text-destructive"><Flame className="h-3 w-3" /> Limited time</span>) as unknown as string}
+              title="On sale this week"
+              href="/shop?q=sale"
+              cta="Shop all sale"
+            />
+            <div className="grid gap-x-4 gap-y-12 grid-cols-2 lg:grid-cols-4">
+              {onSale.map((p, i) => (
+                <MotionInView key={p.id} delay={i * 0.06}>
+                  <ProductCard product={p} onQuickView={setQuickView} />
+                </MotionInView>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* EDITORIAL */}
       <section className="bg-secondary/50 py-20 lg:py-28 border-y border-border">
@@ -169,6 +248,46 @@ const Home = () => {
             <MotionInView key={p.id} delay={i * 0.06}>
               <ProductCard product={p} onQuickView={setQuickView} />
             </MotionInView>
+          ))}
+        </div>
+      </section>
+
+      {/* TOP RATED */}
+      <section className="container-page py-20 lg:py-28 border-t border-border">
+        <SectionHeader
+          eyebrow={(<span className="inline-flex items-center gap-1.5"><Star className="h-3 w-3 fill-foreground text-foreground" /> 4.8★ average</span>) as unknown as string}
+          title="Top-rated picks"
+          href="/shop?sort=rating"
+          cta="See all"
+        />
+        <div className="grid gap-x-4 gap-y-12 grid-cols-2 lg:grid-cols-4">
+          {topRated.map((p, i) => (
+            <MotionInView key={p.id} delay={i * 0.06}>
+              <ProductCard product={p} onQuickView={setQuickView} />
+            </MotionInView>
+          ))}
+        </div>
+      </section>
+
+      {/* STATS STRIP */}
+      <section className="border-y border-border bg-foreground text-background">
+        <div className="container-page grid grid-cols-2 md:grid-cols-4 gap-y-8 py-12 text-center">
+          {[
+            { n: `${products.length}+`, l: "Considered styles" },
+            { n: "12,000+", l: "Happy customers" },
+            { n: "4.8★", l: "Average rating" },
+            { n: "14-day", l: "Easy returns" },
+          ].map((s, i) => (
+            <motion.div
+              key={s.l}
+              initial={{ opacity: 0, y: 8 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: i * 0.08, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <p className="font-serif text-4xl sm:text-5xl tracking-tight">{s.n}</p>
+              <p className="mt-2 text-[10px] uppercase tracking-[0.28em] text-background/60">{s.l}</p>
+            </motion.div>
           ))}
         </div>
       </section>
