@@ -1,11 +1,11 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Category, categoryMeta, collections, Product } from "@/data/products";
 import { useProducts } from "@/hooks/useProducts";
 import ProductCard from "@/components/ProductCard";
 import QuickViewModal from "@/components/QuickViewModal";
 import { Button } from "@/components/ui/button";
-import { SlidersHorizontal, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, LayoutGrid, List, SlidersHorizontal, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import FilterDrawer, { FilterState, defaultFilters } from "@/components/FilterDrawer";
 
@@ -15,17 +15,26 @@ const allCats: { value: Category | "all"; label: string }[] = [
   { value: "men", label: categoryMeta.men.label },
   { value: "women", label: categoryMeta.women.label },
   { value: "essentials", label: categoryMeta.essentials.label },
+  { value: "outerwear", label: categoryMeta.outerwear.label },
+  { value: "bottoms", label: categoryMeta.bottoms.label },
+  { value: "accessories", label: categoryMeta.accessories.label },
 ];
+
+const PER_PAGE_OPTIONS = [12, 24, 48];
 
 const Shop = () => {
   const products = useProducts();
   const [params, setParams] = useSearchParams();
   const [quickView, setQuickView] = useState<Product | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [view, setView] = useState<"grid" | "list">("grid");
+  const [perPage, setPerPage] = useState<number>(24);
+  const [page, setPage] = useState(1);
 
   const cat = (params.get("cat") as Category | null) || "all";
   const q = params.get("q")?.toLowerCase().trim() || "";
   const collection = params.get("collection")?.toLowerCase() || "";
+  const sortParam = params.get("sort") || "";
 
   // Build facets from full catalog so options stay stable.
   const facets = useMemo(() => {
@@ -52,12 +61,23 @@ const Shop = () => {
         { value: "women", label: "Women" },
         { value: "essentials", label: "Essentials" },
         { value: "new", label: "New" },
+        { value: "outerwear", label: "Outerwear" },
+        { value: "bottoms", label: "Bottoms" },
+        { value: "accessories", label: "Accessories" },
       ],
       badges: Array.from(badgesSet),
     };
   }, [products]);
 
   const [filters, setFilters] = useState<FilterState>(() => defaultFilters(100));
+
+  // Sync sort from URL when present
+  useEffect(() => {
+    if (sortParam && sortParam !== filters.sort) {
+      setFilters((f) => ({ ...f, sort: sortParam }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sortParam]);
 
   // Once products load, ensure price range matches catalog max.
   useMemo(() => {
@@ -100,9 +120,22 @@ const Shop = () => {
         list.sort((a, b) => discount(a) - discount(b)); break;
       case "new":
         list.sort((a, b) => Number(b.badge === "New") - Number(a.badge === "New")); break;
+      case "rating":
+        list.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0)); break;
+      case "popular":
+        list.sort((a, b) => (b.reviewCount ?? 0) - (a.reviewCount ?? 0)); break;
     }
     return list;
   }, [cat, q, collection, filters, products]);
+
+  // Reset to page 1 when filters/cat/perPage change
+  useEffect(() => { setPage(1); }, [cat, q, collection, filters, perPage]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
+  const paged = useMemo(
+    () => filtered.slice((page - 1) * perPage, page * perPage),
+    [filtered, page, perPage],
+  );
 
   const setCat = (value: string) => {
     const next = new URLSearchParams(params);
@@ -178,6 +211,28 @@ const Shop = () => {
           </div>
           <div className="flex items-center gap-3 text-sm ml-auto">
             <span className="text-muted-foreground tabular-nums">{filtered.length} Items</span>
+            <div className="hidden sm:flex items-center gap-1 border border-border rounded-full p-0.5">
+              <button
+                onClick={() => setView("grid")}
+                aria-label="Grid view"
+                className={cn("grid h-8 w-8 place-items-center rounded-full transition-colors", view === "grid" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground")}
+              ><LayoutGrid className="h-3.5 w-3.5" /></button>
+              <button
+                onClick={() => setView("list")}
+                aria-label="List view"
+                className={cn("grid h-8 w-8 place-items-center rounded-full transition-colors", view === "list" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground")}
+              ><List className="h-3.5 w-3.5" /></button>
+            </div>
+            <div className="hidden sm:flex items-center gap-1 text-xs text-muted-foreground">
+              <span>Show</span>
+              <select
+                value={perPage}
+                onChange={(e) => setPerPage(Number(e.target.value))}
+                className="bg-transparent border border-border rounded-full px-2.5 py-1 text-xs focus:outline-none focus:border-foreground tabular-nums"
+              >
+                {PER_PAGE_OPTIONS.map((n) => (<option key={n} value={n}>{n}</option>))}
+              </select>
+            </div>
             <button
               onClick={() => setDrawerOpen(true)}
               className="group relative inline-flex items-center gap-2 px-5 py-2.5 border border-foreground bg-background text-foreground text-xs uppercase tracking-[0.2em] font-medium hover:bg-foreground hover:text-background transition-all duration-300"
@@ -221,11 +276,59 @@ const Shop = () => {
             </Button>
           </div>
         ) : (
-          <div className="mt-8 grid gap-x-4 gap-y-10 grid-cols-2 lg:grid-cols-4">
-            {filtered.map((p) => (
-              <ProductCard key={p.id} product={p} onQuickView={setQuickView} />
-            ))}
-          </div>
+          <>
+            {view === "grid" ? (
+              <div className="mt-8 grid gap-x-4 gap-y-10 grid-cols-2 lg:grid-cols-4">
+                {paged.map((p) => (
+                  <ProductCard key={p.id} product={p} onQuickView={setQuickView} />
+                ))}
+              </div>
+            ) : (
+              <div className="mt-8 flex flex-col gap-6">
+                {paged.map((p) => (
+                  <ProductCard key={p.id} product={p} onQuickView={setQuickView} view="list" />
+                ))}
+              </div>
+            )}
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <nav className="mt-14 flex items-center justify-center gap-2" aria-label="Pagination">
+                <button
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className="grid h-10 w-10 place-items-center rounded-full border border-border disabled:opacity-40 hover:border-foreground transition-colors"
+                  aria-label="Previous page"
+                ><ChevronLeft className="h-4 w-4" /></button>
+                {pageNumbers(page, totalPages).map((n, i) =>
+                  n === "…" ? (
+                    <span key={`g-${i}`} className="px-2 text-muted-foreground">…</span>
+                  ) : (
+                    <button
+                      key={n}
+                      onClick={() => setPage(n as number)}
+                      className={cn(
+                        "h-10 min-w-10 px-3 rounded-full text-sm tabular-nums transition-colors",
+                        page === n
+                          ? "bg-foreground text-background"
+                          : "border border-border hover:border-foreground",
+                      )}
+                    >{n}</button>
+                  ),
+                )}
+                <button
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                  className="grid h-10 w-10 place-items-center rounded-full border border-border disabled:opacity-40 hover:border-foreground transition-colors"
+                  aria-label="Next page"
+                ><ChevronRight className="h-4 w-4" /></button>
+              </nav>
+            )}
+
+            <p className="mt-6 text-center text-xs text-muted-foreground tabular-nums">
+              Showing {(page - 1) * perPage + 1}–{Math.min(page * perPage, filtered.length)} of {filtered.length}
+            </p>
+          </>
         )}
       </section>
 
@@ -245,5 +348,17 @@ const Shop = () => {
 
 const discount = (p: Product) =>
   p.compareAt && p.compareAt > p.price ? (p.compareAt - p.price) / p.compareAt : 0;
+
+function pageNumbers(current: number, total: number): (number | "…")[] {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+  const out: (number | "…")[] = [1];
+  const start = Math.max(2, current - 1);
+  const end = Math.min(total - 1, current + 1);
+  if (start > 2) out.push("…");
+  for (let i = start; i <= end; i++) out.push(i);
+  if (end < total - 1) out.push("…");
+  out.push(total);
+  return out;
+}
 
 export default Shop;

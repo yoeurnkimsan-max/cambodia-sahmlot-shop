@@ -19,6 +19,9 @@ const CATEGORIES: { value: Category; label: string }[] = [
   { value: "men", label: "Men" },
   { value: "women", label: "Women" },
   { value: "essentials", label: "Essentials" },
+  { value: "accessories", label: "Accessories" },
+  { value: "outerwear", label: "Outerwear" },
+  { value: "bottoms", label: "Bottoms" },
 ];
 
 const SIZES = ["XS", "S", "M", "L", "XL", "XXL"];
@@ -32,7 +35,9 @@ const productSchema = z
     compareAt: z.coerce.number().optional().or(z.literal("")).transform((v) => (v === "" || v === undefined ? undefined : Number(v))),
     description: z.string().min(10, "Description should be at least 10 characters"),
     detailsRaw: z.string().min(3, "Add at least one detail"),
-    categories: z.array(z.enum(["new", "men", "women", "essentials"])).min(1, "Pick at least one category"),
+    categories: z
+      .array(z.enum(["new", "men", "women", "essentials", "accessories", "outerwear", "bottoms"]))
+      .min(1, "Pick at least one category"),
     sizes: z.array(z.string()).min(1, "Pick at least one size"),
     colorsRaw: z
       .string()
