@@ -167,7 +167,7 @@ const Home = () => {
       {/* TRENDING NOW */}
       <section className="container-page py-20 lg:py-28 border-t border-border">
         <SectionHeader
-          eyebrow={(<span className="inline-flex items-center gap-1.5"><TrendingUp className="h-3 w-3" /> Trending now</span>) as unknown as string}
+          eyebrow={(<span className="inline-flex items-center gap-1.5"><TrendingUp className="h-3 w-3" /> Trending now</span>}
           title="What's moving fast"
           href="/shop"
           cta="Explore all"
@@ -186,7 +186,7 @@ const Home = () => {
         <section className="bg-destructive/[0.04] py-20 lg:py-28 border-y border-border">
           <div className="container-page">
             <SectionHeader
-              eyebrow={(<span className="inline-flex items-center gap-1.5 text-destructive"><Flame className="h-3 w-3" /> Limited time</span>) as unknown as string}
+              eyebrow={(<span className="inline-flex items-center gap-1.5 text-destructive"><Flame className="h-3 w-3" /> Limited time</span>}
               title="On sale this week"
               href="/shop?q=sale"
               cta="Shop all sale"
@@ -255,7 +255,7 @@ const Home = () => {
       {/* TOP RATED */}
       <section className="container-page py-20 lg:py-28 border-t border-border">
         <SectionHeader
-          eyebrow={(<span className="inline-flex items-center gap-1.5"><Star className="h-3 w-3 fill-foreground text-foreground" /> 4.8★ average</span>) as unknown as string}
+          eyebrow={(<span className="inline-flex items-center gap-1.5"><Star className="h-3 w-3 fill-foreground text-foreground" /> 4.8★ average</span>}
           title="Top-rated picks"
           href="/shop?sort=rating"
           cta="See all"
