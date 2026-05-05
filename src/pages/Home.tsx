@@ -11,6 +11,8 @@ import HeroSection from "@/components/HeroSection";
 import QuickViewModal from "@/components/QuickViewModal";
 import RecentlyViewed from "@/components/RecentlyViewed";
 import MotionInView from "@/components/MotionInView";
+import ShopTheEdit from "@/components/ShopTheEdit";
+import LookbookSection from "@/components/LookbookSection";
 import { Button } from "@/components/ui/button";
 import { Product } from "@/data/products";
 
@@ -164,6 +166,9 @@ const Home = () => {
         </div>
       </section>
 
+      {/* SHOP THE EDIT — large image tiles */}
+      <ShopTheEdit />
+
       {/* TRENDING NOW */}
       <section className="container-page py-20 lg:py-28 border-t border-border">
         <SectionHeader
@@ -309,6 +314,9 @@ const Home = () => {
           </MotionInView>
         </div>
       </section>
+
+      {/* UGC LOOKBOOK */}
+      <LookbookSection />
 
       <QuickViewModal product={quickView} onClose={() => setQuickView(null)} />
       <RecentlyViewed />
