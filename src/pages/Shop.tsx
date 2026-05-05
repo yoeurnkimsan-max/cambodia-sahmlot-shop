@@ -5,7 +5,9 @@ import { useProducts } from "@/hooks/useProducts";
 import ProductCard from "@/components/ProductCard";
 import QuickViewModal from "@/components/QuickViewModal";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, LayoutGrid, List, SlidersHorizontal, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, LayoutGrid, List, SlidersHorizontal, X, ChevronRight as Chevron } from "lucide-react";
+import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import FilterDrawer, { FilterState, defaultFilters } from "@/components/FilterDrawer";
 
@@ -167,22 +169,47 @@ const Shop = () => {
 
   return (
     <>
-      <section className="border-b border-border bg-secondary/40">
-        <div className="container-page py-12 lg:py-16">
-          <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Shop</p>
-          <h1 className="mt-2 font-serif text-4xl sm:text-5xl">{heading}</h1>
-          <p className="mt-2 text-muted-foreground max-w-xl">{subheading}</p>
+      {/* Compact breadcrumb header */}
+      <section className="border-b border-border bg-background">
+        <div className="container-page pt-6 pb-5">
+          <motion.nav
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+            aria-label="Breadcrumb"
+            className="flex items-center gap-1.5 text-[11px] uppercase tracking-[0.22em] text-muted-foreground"
+          >
+            <Link to="/" className="hover:text-foreground transition-colors">Home</Link>
+            <Chevron className="h-3 w-3 opacity-60" />
+            <Link to="/shop" className="hover:text-foreground transition-colors">Shop</Link>
+            {cat !== "all" && (
+              <>
+                <Chevron className="h-3 w-3 opacity-60" />
+                <span className="text-foreground">{heading}</span>
+              </>
+            )}
+          </motion.nav>
+          <div className="mt-3 flex flex-wrap items-end justify-between gap-3">
+            <motion.div
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.45, delay: 0.05, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <h1 className="font-serif text-[28px] sm:text-[32px] tracking-[-0.02em] leading-none">{heading}</h1>
+              <p className="mt-1.5 text-[13px] text-muted-foreground">{subheading}</p>
+            </motion.div>
+            <span className="text-[11px] uppercase tracking-[0.22em] text-muted-foreground tabular-nums">{filtered.length} items</span>
+          </div>
 
-          {/* Active filters */}
           {(q || collection) && (
-            <div className="mt-4 flex flex-wrap items-center gap-2 text-xs">
+            <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
               {q && (
-                <button onClick={() => clearFilter("q")} className="inline-flex items-center gap-1.5 border border-border bg-background px-3 py-1 hover:border-foreground">
+                <button onClick={() => clearFilter("q")} className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1 hover:border-foreground transition-colors">
                   Search: <span className="font-semibold">{q}</span> <X className="h-3 w-3" />
                 </button>
               )}
               {collectionLabel && (
-                <button onClick={() => clearFilter("collection")} className="inline-flex items-center gap-1.5 border border-border bg-background px-3 py-1 hover:border-foreground">
+                <button onClick={() => clearFilter("collection")} className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1 hover:border-foreground transition-colors">
                   Collection: <span className="font-semibold">{collectionLabel}</span> <X className="h-3 w-3" />
                 </button>
               )}
@@ -191,26 +218,27 @@ const Shop = () => {
         </div>
       </section>
 
-      <section className="container-page py-8">
-        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
+      {/* Sticky toolbar */}
+      <section className="container-page pt-4">
+        <div className="sticky top-[64px] z-20 -mx-4 px-4 sm:mx-0 sm:px-0 bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70 border-b border-border">
+          <div className="flex flex-wrap items-center justify-between gap-3 py-3">
           <div className="hidden md:flex items-center gap-1 overflow-x-auto">
             {allCats.map((c) => (
               <button
                 key={c.value}
                 onClick={() => setCat(c.value)}
                 className={cn(
-                  "px-4 py-2 text-sm font-medium uppercase tracking-wide transition-colors",
+                  "relative px-3.5 py-1.5 text-[12px] font-medium uppercase tracking-[0.18em] transition-colors rounded-full",
                   cat === c.value
-                    ? "bg-foreground text-background rounded-full"
-                    : "text-muted-foreground hover:text-foreground",
+                    ? "bg-foreground text-background"
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary",
                 )}
               >
                 {c.label}
               </button>
             ))}
           </div>
-          <div className="flex items-center gap-3 text-sm ml-auto">
-            <span className="text-muted-foreground tabular-nums">{filtered.length} Items</span>
+          <div className="flex items-center gap-2.5 text-sm ml-auto">
             <div className="hidden sm:flex items-center gap-1 border border-border rounded-full p-0.5">
               <button
                 onClick={() => setView("grid")}
@@ -223,19 +251,19 @@ const Shop = () => {
                 className={cn("grid h-8 w-8 place-items-center rounded-full transition-colors", view === "list" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground")}
               ><List className="h-3.5 w-3.5" /></button>
             </div>
-            <div className="hidden sm:flex items-center gap-1 text-xs text-muted-foreground">
+            <div className="hidden sm:flex items-center gap-1.5 text-[11px] text-muted-foreground">
               <span>Show</span>
               <select
                 value={perPage}
                 onChange={(e) => setPerPage(Number(e.target.value))}
-                className="bg-transparent border border-border rounded-full px-2.5 py-1 text-xs focus:outline-none focus:border-foreground tabular-nums"
+                className="bg-transparent border border-border rounded-full px-2.5 py-1 text-[11px] focus:outline-none focus:border-foreground tabular-nums cursor-pointer"
               >
                 {PER_PAGE_OPTIONS.map((n) => (<option key={n} value={n}>{n}</option>))}
               </select>
             </div>
             <button
               onClick={() => setDrawerOpen(true)}
-              className="group relative inline-flex items-center gap-2 px-5 py-2.5 border border-foreground bg-background text-foreground text-xs uppercase tracking-[0.2em] font-medium hover:bg-foreground hover:text-background transition-all duration-300"
+              className="group relative inline-flex items-center gap-2 rounded-full px-4 py-2 border border-foreground bg-background text-foreground text-[11px] uppercase tracking-[0.2em] font-medium hover:bg-foreground hover:text-background transition-all duration-300"
             >
               <SlidersHorizontal className="h-3.5 w-3.5" />
               Filter
@@ -246,10 +274,11 @@ const Shop = () => {
               )}
             </button>
           </div>
+          </div>
         </div>
 
         {/* Mobile category strip */}
-        <div className="md:hidden flex gap-2 py-4 overflow-x-auto -mx-4 px-4 border-b border-border">
+        <div className="md:hidden flex gap-2 py-3 overflow-x-auto -mx-4 px-4 border-b border-border">
           {allCats.map((c) => (
             <button
               key={c.value}
