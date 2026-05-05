@@ -5,7 +5,7 @@ import { useProducts } from "@/hooks/useProducts";
 import ProductCard from "@/components/ProductCard";
 import QuickViewModal from "@/components/QuickViewModal";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, LayoutGrid, List, SlidersHorizontal, X, ChevronRight as Chevron } from "lucide-react";
+import { ChevronLeft, ChevronRight, LayoutGrid, List, SlidersHorizontal, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -180,11 +180,11 @@ const Shop = () => {
             className="flex items-center gap-1.5 text-[11px] uppercase tracking-[0.22em] text-muted-foreground"
           >
             <Link to="/" className="hover:text-foreground transition-colors">Home</Link>
-            <Chevron className="h-3 w-3 opacity-60" />
+            <ChevronRight className="h-3 w-3 opacity-60" />
             <Link to="/shop" className="hover:text-foreground transition-colors">Shop</Link>
             {cat !== "all" && (
               <>
-                <Chevron className="h-3 w-3 opacity-60" />
+                <ChevronRight className="h-3 w-3 opacity-60" />
                 <span className="text-foreground">{heading}</span>
               </>
             )}
