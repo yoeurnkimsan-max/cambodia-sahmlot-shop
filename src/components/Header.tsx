@@ -62,12 +62,6 @@ const Header = () => {
     setSearchOpen(false);
   }, [location.pathname, location.search]);
 
-  // Body scroll lock for mega-menu
-  useEffect(() => {
-    document.body.style.overflow = activeMenu ? "hidden" : "";
-    return () => { document.body.style.overflow = ""; };
-  }, [activeMenu]);
-
   // Esc closes everything
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
