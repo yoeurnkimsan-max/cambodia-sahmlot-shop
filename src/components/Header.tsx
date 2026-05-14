@@ -275,99 +275,25 @@ const Header = () => {
           </div>
         </div>
 
-        {/* Mega-menu panel */}
+        {/* Sub-menu pill bar (selected menu) */}
         <AnimatePresence>
           {activeMega && (
             <motion.div
               key={activeMega.id}
-              initial={{ opacity: 0, y: -8 }}
+              initial={{ opacity: 0, y: -6 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.22, ease }}
-              className="absolute left-0 right-0 top-full hidden lg:block border-b border-border bg-background shadow-pop"
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.2, ease }}
+              className="absolute left-0 right-0 top-full hidden lg:block border-b border-border glass shadow-soft"
               onMouseEnter={() => enterMenu(activeMega.id)}
               onMouseLeave={leaveMenu}
             >
-              <div className="container-page py-10">
-                <div className={cn("grid gap-12", activeMega.feature ? "lg:grid-cols-[1fr_360px]" : "grid-cols-1")}>
-                  <div
-                    className="grid gap-x-10 gap-y-8"
-                    style={{ gridTemplateColumns: `repeat(${Math.min(activeMega.columns.length, 4)}, minmax(0, 1fr))` }}
-                  >
-                    {activeMega.columns.map((col, idx) => (
-                      <motion.div
-                        key={col.heading}
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.06 + idx * 0.05, duration: 0.32, ease }}
-                      >
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-muted-foreground mb-4">
-                          {col.heading}
-                        </p>
-                        <ul className="space-y-0.5">
-                          {col.links.map((l) => (
-                            <li key={l.label}>
-                              <Link
-                                to={l.to}
-                                className="group inline-flex items-center gap-2 py-1.5 text-[13.5px] text-foreground/80 hover:text-foreground transition-colors"
-                                onClick={() => setActiveMenu(null)}
-                              >
-                                <span className="story-link">{l.label}</span>
-                                {l.tag && (
-                                  <span
-                                    className={cn(
-                                      "rounded-full px-1.5 py-0.5 text-[8.5px] font-semibold uppercase tracking-[0.14em]",
-                                      l.tag === "new"
-                                        ? "bg-foreground text-background"
-                                        : "bg-destructive/10 text-destructive",
-                                    )}
-                                  >
-                                    {l.tag}
-                                  </span>
-                                )}
-                                <ArrowUpRight className="h-3 w-3 opacity-0 -translate-x-1 transition-all duration-300 group-hover:opacity-60 group-hover:translate-x-0" />
-                              </Link>
-                            </li>
-                          ))}
-                        </ul>
-                      </motion.div>
-                    ))}
-                  </div>
-
-                  {activeMega.feature && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.16, duration: 0.4, ease }}
-                    >
-                      <Link
-                        to={activeMega.feature.to}
-                        onClick={() => setActiveMenu(null)}
-                        className="group relative block overflow-hidden rounded-xl bg-secondary aspect-[5/6]"
-                      >
-                        <img
-                          src={activeMega.feature.image}
-                          alt={activeMega.feature.title}
-                          loading="lazy"
-                          className="absolute inset-0 h-full w-full object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-[1.06]"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/15 to-transparent" />
-                        <div className="absolute inset-0 p-6 flex flex-col justify-end text-background">
-                          <span className="inline-flex items-center gap-1.5 self-start rounded-full bg-background/15 backdrop-blur px-2.5 py-1 text-[10px] uppercase tracking-[0.22em]">
-                            <span className="h-1 w-1 rounded-full bg-background" />
-                            Featured
-                          </span>
-                          <h4 className="mt-3 font-serif text-2xl leading-tight">{activeMega.feature.title}</h4>
-                          <p className="mt-1.5 text-xs opacity-90 leading-relaxed">{activeMega.feature.copy}</p>
-                          <p className="mt-4 inline-flex items-center gap-1 text-[11px] uppercase tracking-[0.2em] font-medium">
-                            {activeMega.feature.cta}
-                            <ArrowUpRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-                          </p>
-                        </div>
-                      </Link>
-                    </motion.div>
-                  )}
-                </div>
+              <div className="container-page py-3">
+                <SubMenuPills
+                  menuId={activeMega.id}
+                  links={activeMega.columns.flatMap((c) => c.links)}
+                  onNavigate={() => setActiveMenu(null)}
+                />
               </div>
             </motion.div>
           )}
