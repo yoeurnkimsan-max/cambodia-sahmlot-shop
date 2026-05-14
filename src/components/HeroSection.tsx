@@ -263,7 +263,7 @@ const HeroSection = () => {
     if (slides.length <= 1 || paused) return;
     timer.current = setInterval(() => setIndex((i) => (i + 1) % slides.length), AUTOPLAY_MS);
     return () => { if (timer.current) clearInterval(timer.current); };
-  }, [slides.length, paused]);
+  }, [slides.length, paused, index]);
 
   const t = themes[slides[index].theme ?? "warm"];
   const single = slides.length === 1;
