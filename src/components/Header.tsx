@@ -17,6 +17,83 @@ import { cn } from "@/lib/utils";
 
 const ease = [0.16, 1, 0.3, 1] as const;
 
+type SubLink = { label: string; to: string; tag?: "new" | "hot" };
+
+const SubMenuPills = ({
+  menuId,
+  links,
+  onNavigate,
+}: {
+  menuId: string;
+  links: SubLink[];
+  onNavigate: () => void;
+}) => {
+  const location = useLocation();
+  const [hover, setHover] = useState<string | null>(null);
+
+  // Active link based on current URL
+  const activeLabel = (() => {
+    const match = links.find((l) => location.pathname + location.search === l.to);
+    return match?.label ?? null;
+  })();
+
+  const targetLabel = hover ?? activeLabel;
+
+  return (
+    <div
+      className="flex flex-wrap items-center gap-1"
+      onMouseLeave={() => setHover(null)}
+    >
+      {links.map((l, i) => {
+        const isTarget = targetLabel === l.label;
+        return (
+          <motion.div
+            key={l.label}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.03 + i * 0.025, duration: 0.28, ease }}
+            className="relative"
+            onMouseEnter={() => setHover(l.label)}
+          >
+            <Link
+              to={l.to}
+              onClick={onNavigate}
+              className={cn(
+                "relative inline-flex items-center gap-2 rounded-full px-4 py-2 text-[11.5px] font-semibold uppercase tracking-[0.22em] transition-colors duration-200",
+                isTarget ? "text-background" : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {isTarget && (
+                <motion.span
+                  layoutId={`submenu-pill-${menuId}`}
+                  aria-hidden
+                  className="absolute inset-0 -z-0 rounded-full bg-foreground"
+                  transition={{ type: "spring", stiffness: 380, damping: 32, mass: 0.6 }}
+                />
+              )}
+              <span className="relative z-10">{l.label}</span>
+              {l.tag && (
+                <span
+                  className={cn(
+                    "relative z-10 rounded-full px-1.5 py-0.5 text-[8.5px] font-bold tracking-[0.14em]",
+                    l.tag === "new"
+                      ? isTarget
+                        ? "bg-background text-foreground"
+                        : "bg-foreground text-background"
+                      : "bg-destructive/15 text-destructive",
+                  )}
+                >
+                  {l.tag}
+                </span>
+              )}
+            </Link>
+          </motion.div>
+        );
+      })}
+    </div>
+  );
+};
+
 const Header = () => {
   const { count, openCart } = useCart();
   const { count: wishCount } = useWishlist();
