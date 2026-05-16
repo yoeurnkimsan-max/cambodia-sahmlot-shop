@@ -1,18 +1,47 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useCart } from "@/context/CartContext";
+import { useOrders } from "@/context/OrdersContext";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Lock } from "lucide-react";
 
 const Checkout = () => {
   const { itemsDetailed, subtotal, clear } = useCart();
-  const [placed, setPlaced] = useState(false);
+  const { addOrder } = useOrders();
+  const [placed, setPlaced] = useState<{ code: string } | null>(null);
   const shipping = subtotal > 35 || subtotal === 0 ? 0 : 4;
   const total = subtotal + shipping;
 
-  const onSubmit = (e: React.FormEvent) => {
+  const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setPlaced(true);
+    const fd = new FormData(e.currentTarget);
+    const card = String(fd.get("card") || "");
+    const order = addOrder({
+      customer: {
+        email: String(fd.get("email") || ""),
+        phone: String(fd.get("phone") || ""),
+        firstName: String(fd.get("firstName") || ""),
+        lastName: String(fd.get("lastName") || ""),
+        address: String(fd.get("address") || ""),
+        city: String(fd.get("city") || ""),
+        postal: String(fd.get("postal") || ""),
+        country: String(fd.get("country") || "Cambodia"),
+      },
+      items: itemsDetailed.map((i) => ({
+        productId: i.productId,
+        name: i.product.name,
+        image: i.product.image,
+        price: i.product.price,
+        size: i.size,
+        color: i.color,
+        quantity: i.quantity,
+      })),
+      subtotal,
+      shipping,
+      total,
+      paymentLast4: card.replace(/\D/g, "").slice(-4) || undefined,
+    });
+    setPlaced({ code: order.code });
     setTimeout(() => clear(), 100);
   };
 
@@ -21,7 +50,9 @@ const Checkout = () => {
       <section className="container-page py-24 max-w-xl text-center">
         <CheckCircle2 className="mx-auto h-12 w-12 text-accent" />
         <h1 className="mt-6 font-serif text-3xl">Thank you for your order</h1>
-        <p className="mt-3 text-muted-foreground">A confirmation has been sent to your email. We can't wait for you to wear it.</p>
+        <p className="mt-3 text-muted-foreground">
+          Order <span className="font-mono font-semibold text-foreground">{placed.code}</span> received. A confirmation has been sent to your email.
+        </p>
         <Button asChild className="mt-8 rounded-none"><Link to="/shop">Continue Shopping</Link></Button>
       </section>
     );
@@ -44,23 +75,22 @@ const Checkout = () => {
         <form onSubmit={onSubmit} className="space-y-10">
           <fieldset className="space-y-4">
             <legend className="font-serif text-xl mb-2">Contact</legend>
-            <input required type="email" placeholder="Email" className="w-full border border-border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
-            <input required placeholder="Phone (e.g. +855 ...)" className="w-full border border-border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+            <input name="email" required type="email" placeholder="Email" className="w-full border border-border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+            <input name="phone" required placeholder="Phone (e.g. +855 ...)" className="w-full border border-border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
           </fieldset>
 
           <fieldset className="space-y-4">
             <legend className="font-serif text-xl mb-2">Delivery</legend>
             <div className="grid grid-cols-2 gap-4">
-              <input required placeholder="First name" className="border border-border bg-background px-4 py-3 text-sm" />
-              <input required placeholder="Last name" className="border border-border bg-background px-4 py-3 text-sm" />
+              <input name="firstName" required placeholder="First name" className="border border-border bg-background px-4 py-3 text-sm" />
+              <input name="lastName" required placeholder="Last name" className="border border-border bg-background px-4 py-3 text-sm" />
             </div>
-            <input required placeholder="Street address" className="w-full border border-border bg-background px-4 py-3 text-sm" />
+            <input name="address" required placeholder="Street address" className="w-full border border-border bg-background px-4 py-3 text-sm" />
             <div className="grid grid-cols-2 gap-4">
-              <input required placeholder="City (e.g. Phnom Penh)" className="border border-border bg-background px-4 py-3 text-sm" />
-              <input required placeholder="Postal code" className="border border-border bg-background px-4 py-3 text-sm" />
+              <input name="city" required placeholder="City (e.g. Phnom Penh)" className="border border-border bg-background px-4 py-3 text-sm" />
+              <input name="postal" required placeholder="Postal code" className="border border-border bg-background px-4 py-3 text-sm" />
             </div>
-            <select required className="w-full border border-border bg-background px-4 py-3 text-sm">
-              <option value="">Country</option>
+            <select name="country" required defaultValue="Cambodia" className="w-full border border-border bg-background px-4 py-3 text-sm">
               <option>Cambodia</option>
               <option>Vietnam</option>
               <option>Thailand</option>
@@ -70,10 +100,10 @@ const Checkout = () => {
 
           <fieldset className="space-y-4">
             <legend className="font-serif text-xl mb-2">Payment <Lock className="inline h-4 w-4 text-muted-foreground" /></legend>
-            <input required placeholder="Card number" className="w-full border border-border bg-background px-4 py-3 text-sm" />
+            <input name="card" required placeholder="Card number" className="w-full border border-border bg-background px-4 py-3 text-sm" />
             <div className="grid grid-cols-2 gap-4">
-              <input required placeholder="MM / YY" className="border border-border bg-background px-4 py-3 text-sm" />
-              <input required placeholder="CVC" className="border border-border bg-background px-4 py-3 text-sm" />
+              <input name="expiry" required placeholder="MM / YY" className="border border-border bg-background px-4 py-3 text-sm" />
+              <input name="cvc" required placeholder="CVC" className="border border-border bg-background px-4 py-3 text-sm" />
             </div>
             <p className="text-xs text-muted-foreground">Demo only — no real payment is processed.</p>
           </fieldset>
