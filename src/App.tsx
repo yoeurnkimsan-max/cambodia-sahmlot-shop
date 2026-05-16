@@ -16,13 +16,14 @@ import { CartProvider } from "@/context/CartContext";
 import { WishlistProvider } from "@/context/WishlistContext";
 import { CompareProvider } from "@/context/CompareContext";
 import { RecentlyViewedProvider } from "@/context/RecentlyViewedContext";
+import { OrdersProvider } from "@/context/OrdersContext";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <WishlistProvider><CompareProvider><RecentlyViewedProvider><CartProvider>
+      <OrdersProvider><WishlistProvider><CompareProvider><RecentlyViewedProvider><CartProvider>
         <Toaster />
         <Sonner />
         <BrowserRouter>
@@ -39,7 +40,7 @@ const App = () => (
             </Route>
           </Routes>
         </BrowserRouter>
-      </CartProvider></RecentlyViewedProvider></CompareProvider></WishlistProvider>
+      </CartProvider></RecentlyViewedProvider></CompareProvider></WishlistProvider></OrdersProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
